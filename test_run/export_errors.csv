@@ -1,2 +1,2 @@
 ﻿path,filename,case_number,error,retry_count,max_retries,added_at,last_retry_at,batch_id
-D:\workSpace\AI__SPACE\zzz-00030\test_run\intake\bad file#name.pdf,bad file#name.pdf,,文件名包含非法字符; 无法从文件名解析案卷号,1,3,2026-06-12T02:05:12.995362,2026-06-12T02:05:13.003174,
+D:\workSpace\AI__SPACE\zzz-00030\test_run\intake\bad file#name.pdf,bad file#name.pdf,,文件名包含非法字符; 无法从文件名解析案卷号,1,3,2026-06-12T02:28:40.722832,2026-06-12T02:28:40.728721,

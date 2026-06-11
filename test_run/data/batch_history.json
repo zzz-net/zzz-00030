@@ -1,14 +1,14 @@
 [
   {
-    "batch_id": "5f420b3b",
-    "created_at": "2026-06-12T02:05:12.995362",
+    "batch_id": "153f6413",
+    "created_at": "2026-06-12T02:28:40.723824",
     "operator": "test_op",
     "status": "rolled_back",
     "total": 3,
     "succeeded": 1,
     "failed": 2,
     "action_ids": [
-      "8ccf694996e6"
+      "21783dc41d5b"
     ],
     "error_file_paths": [
       "D:\\workSpace\\AI__SPACE\\zzz-00030\\test_run\\intake\\2024-B002-001.pdf",

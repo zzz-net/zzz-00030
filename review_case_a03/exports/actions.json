@@ -1,0 +1,24 @@
+[
+  {
+    "action_id": "f7ea9b17b553",
+    "batch_id": "a1d3ced2",
+    "source": "D:\\workSpace\\AI__SPACE\\zzz-00030\\review_case_a03\\intake\\2024-Z900-001.pdf",
+    "destination": "D:\\workSpace\\AI__SPACE\\zzz-00030\\review_case_a03\\target\\2024-Z900\\2024-Z900-001.pdf",
+    "action_type": "move",
+    "timestamp": "2026-06-12T02:26:12.081352",
+    "operator": "reviewer_a03",
+    "rolled_back": true,
+    "case_number": "2024-Z900"
+  },
+  {
+    "action_id": "2d50bccdbb6f",
+    "batch_id": "",
+    "source": "D:\\workSpace\\AI__SPACE\\zzz-00030\\review_case_a03\\intake\\2024-Z900-002.pdf",
+    "destination": "D:\\workSpace\\AI__SPACE\\zzz-00030\\review_case_a03\\target\\2024-Z900\\2024-Z900-002.pdf",
+    "action_type": "move",
+    "timestamp": "2026-06-12T02:26:54.804879",
+    "operator": "reviewer_a03",
+    "rolled_back": false,
+    "case_number": "2024-Z900"
+  }
+]

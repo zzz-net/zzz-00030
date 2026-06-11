@@ -267,7 +267,7 @@ def main() -> int:
     assert_eq(queue_by_path2[illegal]["status"], "failed", "retry 失败的非法文件 processing_queue 仍为 failed")
 
     # ---------- Step 7: 测试 rollback ----------
-    step("Step 7: 测试 rollback —— 回滚 Step 1 的成功动作")
+    step("Step 7: 测试 rollback —— 回滚 Step 1 的成功动作，验证队列同步更新")
 
     batch_id = batch["batch_id"]
     rollback_result = mgr2.rollback(batch_id)
@@ -284,6 +284,30 @@ def main() -> int:
     history_after = load_json(BATCH_HISTORY_FILE)
     rolled_back = [b for b in history_after if b["batch_id"] == batch_id][0]
     assert_eq(rolled_back["status"], "rolled_back", "批次状态变为 rolled_back")
+
+    queue_after_rollback = load_json(QUEUE_FILE)
+    queue_by_path_rb = {q["path"]: q for q in queue_after_rollback}
+    assert_eq(
+        queue_by_path_rb[valid_a]["status"], "rolled_back",
+        "回滚后 valid_a 的队列状态 = rolled_back（不能是 done）"
+    )
+    assert_eq(
+        queue_by_path_rb[occupied_src]["status"], "done",
+        "retry 成功的占用文件不在该批次，队列仍为 done"
+    )
+    assert_eq(
+        queue_by_path_rb[illegal]["status"], "failed",
+        "非法文件队列状态仍为 failed"
+    )
+
+    actions_after_rollback = read_jsonl(ACTION_LOG)
+    step1_actions = [a for a in actions_after_rollback if a.get("batch_id") == batch_id]
+    assert_eq(len(step1_actions), 1, "该批次有 1 条 action 记录")
+    assert_eq(step1_actions[0]["rolled_back"], True, "action_log 中 rolled_back=True")
+    assert_eq(
+        step1_actions[0]["source"], valid_a,
+        "action_log source 与队列 path 对应"
+    )
 
     # ---------- Step 8: 测试 JSON/CSV 导出 ----------
     step("Step 8: 测试 JSON/CSV 导出")
@@ -327,9 +351,29 @@ def main() -> int:
 
     queue_view = mgr3.processing_queue.all()
     queue_statuses = {q["path"]: q["status"] for q in queue_view}
-    assert_eq(queue_statuses[occupied_src], "done", "重启后 processing_queue: 占用文件 done")
-    assert_eq(queue_statuses[illegal], "failed", "重启后 processing_queue: 非法文件 failed")
-    assert_eq(queue_statuses[valid_a], "done", "重启后 processing_queue: 正常文件 done")
+    assert_eq(
+        queue_statuses[valid_a], "rolled_back",
+        "重启后 processing_queue: 正常文件 rolled_back（回滚后不能是 done）"
+    )
+    assert_eq(
+        queue_statuses[occupied_src], "done",
+        "重启后 processing_queue: 占用文件 done（retry 成功未回滚）"
+    )
+    assert_eq(
+        queue_statuses[illegal], "failed",
+        "重启后 processing_queue: 非法文件 failed"
+    )
+
+    queue_not_done_paths = {
+        q["path"] for q in queue_view
+        if q["status"] in ("failed", "rolled_back")
+    }
+    error_paths = {e["path"] for e in status_view}
+    assert_eq(
+        error_paths.issubset(queue_not_done_paths),
+        True,
+        "error_queue 中的文件在 processing_queue 中都应是非 done 状态（failed 或 rolled_back）"
+    )
 
     step("所有断言通过 ✓")
     print(f"\n证据目录保留: {TEST_ROOT}")

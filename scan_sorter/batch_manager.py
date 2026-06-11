@@ -239,6 +239,13 @@ class BatchManager:
         batch.status = BatchStatus.ROLLED_BACK
         self._save_history()
 
+        rolled_back_actions = [
+            a for a in self.action_logger.get_by_batch(batch_id)
+            if a.rolled_back
+        ]
+        for action in rolled_back_actions:
+            self.processing_queue.mark_rolled_back(action.source)
+
         return {
             "status": "done",
             "batch_id": batch_id,

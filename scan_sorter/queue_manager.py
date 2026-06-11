@@ -104,6 +104,12 @@ class ProcessingQueue:
                 item["status"] = "failed"
         self._save()
 
+    def mark_rolled_back(self, file_path: str) -> None:
+        for item in self._items:
+            if item["path"] == file_path:
+                item["status"] = "rolled_back"
+        self._save()
+
     def all(self) -> list[dict]:
         return list(self._items)
 

@@ -1,0 +1,9 @@
+{
+  "status": "partial_failed",
+  "batch_id": "a1d3ced2",
+  "total": 3,
+  "succeeded": 1,
+  "failed": 2,
+  "precheck_failed": 2,
+  "exec_failed": 0
+}

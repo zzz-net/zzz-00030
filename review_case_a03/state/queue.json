@@ -1,0 +1,20 @@
+[
+  {
+    "path": "D:\\workSpace\\AI__SPACE\\zzz-00030\\review_case_a03\\intake\\2024-Z900-001.pdf",
+    "case_number": "2024-Z900",
+    "status": "rolled_back",
+    "filename": "2024-Z900-001.pdf"
+  },
+  {
+    "path": "D:\\workSpace\\AI__SPACE\\zzz-00030\\review_case_a03\\intake\\2024-Z900-002.pdf",
+    "case_number": "2024-Z900",
+    "status": "done",
+    "filename": "2024-Z900-002.pdf"
+  },
+  {
+    "path": "D:\\workSpace\\AI__SPACE\\zzz-00030\\review_case_a03\\intake\\bad-name#.pdf",
+    "case_number": null,
+    "status": "failed",
+    "filename": "bad-name#.pdf"
+  }
+]
