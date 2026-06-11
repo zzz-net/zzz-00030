@@ -1,0 +1,7 @@
+﻿action_id,batch_id,source,destination,action_type,timestamp,operator,rolled_back,case_number
+ae89cfbdc7d0,e17017fd,D:\workSpace\AI__SPACE\zzz-00030\samples\intake\2024-A001-001.pdf,D:\workSpace\AI__SPACE\zzz-00030\samples\target\2024-A001\2024-A001-001.pdf,move,2026-06-12T01:08:36.478791,admin,False,2024-A001
+19d8866c1fb1,e17017fd,D:\workSpace\AI__SPACE\zzz-00030\samples\intake\2024-A001-002.pdf,D:\workSpace\AI__SPACE\zzz-00030\samples\target\2024-A001\2024-A001-002.pdf,move,2026-06-12T01:08:36.482174,admin,False,2024-A001
+ba46b01d9db5,e17017fd,D:\workSpace\AI__SPACE\zzz-00030\samples\intake\2024-A001-003.png,D:\workSpace\AI__SPACE\zzz-00030\samples\target\2024-A001\2024-A001-003.png,move,2026-06-12T01:08:36.484140,admin,False,2024-A001
+79727c821210,e17017fd,D:\workSpace\AI__SPACE\zzz-00030\samples\intake\2024-B002-001.jpg,D:\workSpace\AI__SPACE\zzz-00030\samples\target\2024-B002\2024-B002-001.jpg,move,2026-06-12T01:08:36.487056,admin,False,2024-B002
+fe3c29d56d61,e17017fd,D:\workSpace\AI__SPACE\zzz-00030\samples\intake\2024-B002-002.jpg,D:\workSpace\AI__SPACE\zzz-00030\samples\target\2024-B002\2024-B002-002.jpg,move,2026-06-12T01:08:36.488018,admin,False,2024-B002
+a8b5a5f74be1,e17017fd,D:\workSpace\AI__SPACE\zzz-00030\samples\intake\2025-C003-001.tiff,D:\workSpace\AI__SPACE\zzz-00030\samples\target\2025-C003\2025-C003-001.tiff,move,2026-06-12T01:08:36.489992,admin,False,2025-C003

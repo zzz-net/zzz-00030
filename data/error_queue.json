@@ -1,0 +1,24 @@
+[
+  {
+    "path": "D:\\workSpace\\AI__SPACE\\zzz-00030\\samples\\intake\\bad file#name.pdf",
+    "filename": "bad file#name.pdf",
+    "case_number": null,
+    "error": "文件名包含非法字符（仅允许字母、数字、横线、下划线、点）; 文件名必须以 档案号(YYYY-AXXX-NNN) 开头; 无法从文件名解析案卷号",
+    "retry_count": 0,
+    "max_retries": 3,
+    "added_at": "2026-06-12T01:08:36.476794",
+    "last_retry_at": null,
+    "batch_id": null
+  },
+  {
+    "path": "D:\\workSpace\\AI__SPACE\\zzz-00030\\samples\\intake\\unparseable_document.pdf",
+    "filename": "unparseable_document.pdf",
+    "case_number": null,
+    "error": "文件名必须以 档案号(YYYY-AXXX-NNN) 开头; 无法从文件名解析案卷号",
+    "retry_count": 0,
+    "max_retries": 3,
+    "added_at": "2026-06-12T01:08:36.477780",
+    "last_retry_at": null,
+    "batch_id": null
+  }
+]

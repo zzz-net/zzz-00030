@@ -1,0 +1,20 @@
+[
+  {
+    "batch_id": "e17017fd",
+    "created_at": "2026-06-12T01:08:36.478701",
+    "operator": "admin",
+    "status": "completed",
+    "total": 6,
+    "succeeded": 6,
+    "failed": 0,
+    "action_ids": [
+      "ae89cfbdc7d0",
+      "19d8866c1fb1",
+      "ba46b01d9db5",
+      "79727c821210",
+      "fe3c29d56d61",
+      "a8b5a5f74be1"
+    ],
+    "error_file_paths": []
+  }
+]
