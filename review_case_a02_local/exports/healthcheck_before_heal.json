@@ -1,0 +1,18 @@
+[
+  {
+    "fingerprint": "f98ade786e0c18c3",
+    "category": "error_queue_inconsistency",
+    "severity": "warning",
+    "description": "processing_queue 标记 failed 但不在 error_queue 中: 2026-R100-001.pdf",
+    "file_path": "D:\\workSpace\\AI__SPACE\\zzz-00030\\review_case_a02_local\\intake\\2026-R100-001.pdf",
+    "queue_path": null,
+    "batch_id": null,
+    "action_id": null,
+    "detail": {
+      "path": "D:\\workSpace\\AI__SPACE\\zzz-00030\\review_case_a02_local\\intake\\2026-R100-001.pdf",
+      "queue_status": "failed"
+    },
+    "fixable": true,
+    "fix_description": "补入error_queue"
+  }
+]

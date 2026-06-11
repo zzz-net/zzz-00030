@@ -1,0 +1,24 @@
+[
+  {
+    "path": "D:\\workSpace\\AI__SPACE\\zzz-00030\\review_case_a02_local\\intake\\bad name#.pdf",
+    "filename": "bad name#.pdf",
+    "case_number": null,
+    "error": "文件名包含非法字符; 无法从文件名解析案卷号",
+    "retry_count": 0,
+    "max_retries": 3,
+    "added_at": "2026-06-12T03:29:05.938236",
+    "last_retry_at": null,
+    "batch_id": null
+  },
+  {
+    "path": "D:\\workSpace\\AI__SPACE\\zzz-00030\\review_case_a02_local\\intake\\2026-R100-001.pdf",
+    "filename": "2026-R100-001.pdf",
+    "case_number": "2026-R100",
+    "error": "heal修正:processing_queue为failed但error_queue缺失",
+    "retry_count": 0,
+    "max_retries": 3,
+    "added_at": "2026-06-12T03:30:29.696510",
+    "last_retry_at": null,
+    "batch_id": null
+  }
+]

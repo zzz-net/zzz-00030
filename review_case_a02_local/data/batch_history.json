@@ -1,0 +1,17 @@
+[
+  {
+    "batch_id": "ac8b2f14",
+    "created_at": "2026-06-12T03:29:05.939693",
+    "operator": "reviewer_a02",
+    "status": "partial_failed",
+    "total": 2,
+    "succeeded": 1,
+    "failed": 1,
+    "action_ids": [
+      "18d877c71479"
+    ],
+    "error_file_paths": [
+      "D:\\workSpace\\AI__SPACE\\zzz-00030\\review_case_a02_local\\intake\\bad name#.pdf"
+    ]
+  }
+]

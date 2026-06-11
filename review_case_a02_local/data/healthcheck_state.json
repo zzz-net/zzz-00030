@@ -1,0 +1,33 @@
+{
+  "last_check_time": "2026-06-12T03:30:38.701089",
+  "last_findings": [],
+  "finding_fingerprints": [],
+  "heal_logs": [
+    {
+      "timestamp": "2026-06-12T03:30:11.964559",
+      "dry_run": true,
+      "actions": [
+        {
+          "fingerprint": "f98ade786e0c18c3",
+          "category": "error_queue_inconsistency",
+          "applied": false,
+          "description": "[dry-run] 补入error_queue: D:\\workSpace\\AI__SPACE\\zzz-00030\\review_case_a02_local\\intake\\2026-R100-001.pdf (processing_queue当前为failed但error_queue无此条目)",
+          "reason": "processing_queue当前标记failed但error_queue缺失,补入error_queue"
+        }
+      ]
+    },
+    {
+      "timestamp": "2026-06-12T03:30:29.697489",
+      "dry_run": false,
+      "actions": [
+        {
+          "fingerprint": "f98ade786e0c18c3",
+          "category": "error_queue_inconsistency",
+          "applied": true,
+          "description": "补入error_queue: D:\\workSpace\\AI__SPACE\\zzz-00030\\review_case_a02_local\\intake\\2026-R100-001.pdf (processing_queue当前为failed但error_queue无此条目)",
+          "reason": "processing_queue当前标记failed但error_queue缺失,补入error_queue"
+        }
+      ]
+    }
+  ]
+}

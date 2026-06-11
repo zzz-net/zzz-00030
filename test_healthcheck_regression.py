@@ -6,11 +6,15 @@ scan-sorter 状态体检与恢复 回归测试脚本
   2. 手工制造冲突和配置变更
   3. 运行 healthcheck 发现问题
   4. 导出 JSON/CSV
-  5. heal dry-run 预览
-  6. heal --confirm 实际修复
-  7. 再次 healthcheck 验证修复
+  5. heal dry-run (通过 CLI)
+  6. heal --confirm (通过 CLI)
+  7. 再次 healthcheck 验证修复后 queue/error_queue/体检一致
   8. 跨重启验证 fingerprint 持久性
   9. 验证 status / export 在修复后一致
+  10. heal_log.jsonl 条数 == CLI heal 调用次数
+  11. 配置偏移场景
+  12. failed-without-error_queue 专项: 手动把 queue 改 failed 但不补 error_queue,
+     然后 CLI heal --confirm, 再 healthcheck, 验证不再新增不一致
 
 运行方式: python test_healthcheck_regression.py
 """
@@ -106,6 +110,11 @@ def touch(path: str) -> None:
 def load_json(path: str):
     with open(path, "r", encoding="utf-8") as f:
         return json.load(f)
+
+
+def save_json(path: str, data) -> None:
+    with open(path, "w", encoding="utf-8") as f:
+        json.dump(data, f, ensure_ascii=False, indent=2)
 
 
 def read_jsonl(path: str) -> list[dict]:
@@ -224,7 +233,7 @@ def main() -> int:
         shutil.copy2(done_file_in_target, occupied_src)
         print(f"  复制目标文件回 intake: {occupied_src}")
 
-    step("Phase 2b: 冲突2 — 添加一个 done 条目但手动删除其目标文件")
+    step("Phase 2b: 冲突2 — 添加一个 done 条目但目标文件不存在")
 
     extra_file = os.path.join(INTAKE_DIR, "2024-C003-001.pdf")
     touch(extra_file)
@@ -336,44 +345,37 @@ def main() -> int:
     print(f"  CSV 导出 {len(rows)} 行")
 
     # ============================================================
-    # Phase 5: heal dry-run
+    # Phase 5: heal dry-run (通过 CLI)
     # ============================================================
-    step("Phase 5: heal dry-run — 预览修复但不实际写入")
+    step("Phase 5: heal dry-run (CLI) — 预览修复但不实际写入")
 
     fingerprints_before = {f.fingerprint for f in findings}
-    actions = checker.heal(findings, dry_run=True)
-    applied = [a for a in actions if a.applied]
-    skipped = [a for a in actions if not a.applied]
-    print(f"  dry-run: {len(applied)} 会修复, {len(skipped)} 跳过")
-
-    assert_eq(len(applied), 0, "dry-run 不应实际修复任何项")
+    cli_main(["-c", CONFIG_PATH, "heal"])
 
     queue_after_dry = load_json(QUEUE_FILE)
     queue_statuses = {q["path"]: q["status"] for q in queue_after_dry}
     occupied_in_queue = queue_statuses.get(occupied_src, "")
-    print(f"  dry-run 后 occupied_src 队列状态: {occupied_in_queue}")
+    assert_eq(occupied_in_queue, "done", "dry-run 不应修改队列状态")
+
+    error_queue_after_dry = load_json(ERROR_QUEUE_FILE)
+    eq_paths_after_dry = [e["path"] for e in error_queue_after_dry]
+    assert_eq(
+        ghost_path in eq_paths_after_dry, True,
+        "dry-run 不应删除 error_queue 条目"
+    )
+    print(f"  dry-run 验证通过: 状态文件未变更")
 
     # ============================================================
-    # Phase 6: heal --confirm 实际修复
+    # Phase 6: heal --confirm (通过 CLI)
     # ============================================================
-    step("Phase 6: heal --confirm — 实际修复可修复项")
+    step("Phase 6: heal --confirm (CLI) — 实际修复可修复项")
 
-    actions_real = checker.heal(findings, dry_run=False)
-    applied_real = [a for a in actions_real if a.applied]
-    skipped_real = [a for a in actions_real if not a.applied]
-    print(f"  实际修复: {len(applied_real)} 已修复, {len(skipped_real)} 跳过")
-    assert_gt(len(applied_real), 0, "应有至少1项实际修复")
-
-    for a in actions_real:
-        tag = "已修复" if a.applied else "跳过"
-        print(f"    [{tag}] {a.description}")
-        if a.reason:
-            print(f"           原因: {a.reason}")
+    cli_main(["-c", CONFIG_PATH, "heal", "--confirm"])
 
     # ============================================================
     # Phase 7: 再次 healthcheck 验证修复效果
     # ============================================================
-    step("Phase 7: 修复后 healthcheck — 验证可修复项已消除")
+    step("Phase 7: 修复后 healthcheck — 验证可修复项已消除, 无新增不一致")
 
     checker_after = HealthChecker(config)
     findings_after = checker_after.check()
@@ -388,15 +390,14 @@ def main() -> int:
     for f in findings_after:
         print(f"    [{f.severity.value}] [{f.category.value}] {f.description}")
 
-    # 验证幽灵条目已清除
     eq_data = load_json(ERROR_QUEUE_FILE)
     eq_paths = [e["path"] for e in eq_data]
+
     assert_eq(
         ghost_path in eq_paths, False,
         "幽灵文件应已从 error_queue 清除"
     )
 
-    # 验证 done+error_queue 不一致已修复
     pq_data = load_json(QUEUE_FILE)
     done_paths_in_eq = []
     for e in eq_data:
@@ -404,6 +405,25 @@ def main() -> int:
             if q["path"] == e["path"] and q["status"] == "done":
                 done_paths_in_eq.append(e["path"])
     assert_eq(len(done_paths_in_eq), 0, "不应有 done 状态文件残留在 error_queue")
+
+    failed_not_in_eq = []
+    for q in pq_data:
+        if q.get("status") == "failed":
+            if q["path"] not in eq_paths:
+                failed_not_in_eq.append(q["path"])
+    assert_eq(
+        len(failed_not_in_eq), 0,
+        f"heal 后不应有 failed 队列项缺失 error_queue: {failed_not_in_eq}"
+    )
+
+    inconsistency_after = [
+        f for f in findings_after
+        if f.category == FindingCategory.ERROR_QUEUE_INCONSISTENCY
+    ]
+    assert_eq(
+        len(inconsistency_after), 0,
+        f"heal 后不应新增 error_queue_inconsistency: {[f.description for f in inconsistency_after]}"
+    )
 
     # ============================================================
     # Phase 8: 跨重启验证 fingerprint 持久性
@@ -482,22 +502,32 @@ def main() -> int:
         assert_in("error", row, "CSV 含 error")
 
     # ============================================================
-    # Phase 10: heal 操作日志持久化验证
+    # Phase 10: heal_log.jsonl 条数 == CLI heal 调用次数
     # ============================================================
-    step("Phase 10: heal_log.jsonl 持久化验证")
+    step("Phase 10: heal_log.jsonl — 条数应等于 CLI heal 调用次数")
 
     heal_log_records = read_jsonl(HEAL_LOG_FILE)
-    assert_gt(len(heal_log_records), 0, "heal_log.jsonl 至少1条记录")
-    for rec in heal_log_records:
-        assert_in("dry_run", rec, "heal 日志含 dry_run")
-        assert_in("actions", rec, "heal 日志含 actions")
-        assert_in("applied_count", rec, "heal 日志含 applied_count")
-        assert_in("skipped_count", rec, "heal 日志含 skipped_count")
+    cli_heal_calls = 2
+    assert_eq(
+        len(heal_log_records), cli_heal_calls,
+        f"heal_log.jsonl 条数应等于 CLI heal 调用次数 ({cli_heal_calls})"
+    )
+
+    for i, rec in enumerate(heal_log_records):
+        assert_in("dry_run", rec, f"heal 日志[{i}] 含 dry_run")
+        assert_in("actions", rec, f"heal 日志[{i}] 含 actions")
+        assert_in("applied_count", rec, f"heal 日志[{i}] 含 applied_count")
+        assert_in("skipped_count", rec, f"heal 日志[{i}] 含 skipped_count")
         for a in rec["actions"]:
             assert_in("fingerprint", a, "heal action 含 fingerprint")
             assert_in("applied", a, "heal action 含 applied")
             assert_in("reason", a, "heal action 含 reason")
-    print(f"  heal_log.jsonl: {len(heal_log_records)} 条日志")
+    print(f"  heal_log.jsonl: {len(heal_log_records)} 条 (CLI 调用 {cli_heal_calls} 次)")
+
+    dry_run_rec = [r for r in heal_log_records if r["dry_run"]]
+    confirm_rec = [r for r in heal_log_records if not r["dry_run"]]
+    assert_eq(len(dry_run_rec), 1, "应有1条 dry-run 日志")
+    assert_eq(len(confirm_rec), 1, "应有1条 confirm 日志")
 
     # ============================================================
     # Phase 11: 配置偏移场景独立验证
@@ -511,6 +541,83 @@ def main() -> int:
     for d in drift_items:
         assert_eq(d.fixable, False, "CONFIG_DRIFT 不可自动修复")
         print(f"  配置偏移: {d.description}")
+
+    # ============================================================
+    # Phase 12: failed-without-error_queue 专项
+    #   手动把 queue 某项改为 failed 但不补 error_queue,
+    #   然后 CLI heal --confirm, 再 healthcheck,
+    #   验证不再新增 error_queue_inconsistency
+    # ============================================================
+    step("Phase 12a: failed-without-error_queue 专项 — 手动制造 queue=failed 但缺 error_queue")
+
+    fresh_file = os.path.join(INTAKE_DIR, "2024-D004-001.pdf")
+    touch(fresh_file)
+    mgr_fresh = BatchManager(config)
+    mgr_fresh.processing_queue.enqueue(
+        fresh_file, "2024-D004", filename="2024-D004-001.pdf"
+    )
+    mgr_fresh.processing_queue.mark_failed(fresh_file)
+
+    pq_check = load_json(QUEUE_FILE)
+    d004_in_queue = [q for q in pq_check if q["path"] == fresh_file]
+    assert_eq(len(d004_in_queue), 1, "D004 在 processing_queue 中")
+    assert_eq(d004_in_queue[0]["status"], "failed", "D004 队列状态为 failed")
+
+    eq_check = load_json(ERROR_QUEUE_FILE)
+    d004_in_eq = [e for e in eq_check if e["path"] == fresh_file]
+    assert_eq(len(d004_in_eq), 0, "D004 不在 error_queue (手动制造的不一致)")
+
+    step("Phase 12b: healthcheck 发现 failed_not_in_error_queue")
+
+    checker_12 = HealthChecker(config)
+    findings_12 = checker_12.check()
+    d004_inconsistency = [
+        f for f in findings_12
+        if f.file_path == fresh_file
+        and f.category == FindingCategory.ERROR_QUEUE_INCONSISTENCY
+    ]
+    assert_gt(len(d004_inconsistency), 0, "应发现 D004 的 error_queue_inconsistency")
+    print(f"  发现 D004 不一致: {d004_inconsistency[0].description}")
+
+    step("Phase 12c: CLI heal --confirm 修复")
+
+    cli_main(["-c", CONFIG_PATH, "heal", "--confirm"])
+
+    step("Phase 12d: 修复后 healthcheck — D004 不再报不一致")
+
+    checker_12d = HealthChecker(config)
+    findings_12d = checker_12d.check()
+    d004_inconsistency_after = [
+        f for f in findings_12d
+        if f.file_path == fresh_file
+        and f.category == FindingCategory.ERROR_QUEUE_INCONSISTENCY
+    ]
+    assert_eq(
+        len(d004_inconsistency_after), 0,
+        "heal 后 D004 不应再报 error_queue_inconsistency"
+    )
+
+    eq_after_12 = load_json(ERROR_QUEUE_FILE)
+    d004_in_eq_after = [e for e in eq_after_12 if e["path"] == fresh_file]
+    assert_eq(len(d004_in_eq_after), 1, "D004 应已补入 error_queue")
+
+    all_inconsistency_after = [
+        f for f in findings_12d
+        if f.category == FindingCategory.ERROR_QUEUE_INCONSISTENCY
+    ]
+    assert_eq(
+        len(all_inconsistency_after), 0,
+        f"heal 后不应有任何 error_queue_inconsistency: {[f.description for f in all_inconsistency_after]}"
+    )
+
+    step("Phase 12e: heal_log.jsonl 条数验证 (3 次 CLI heal 调用)")
+
+    heal_log_records_final = read_jsonl(HEAL_LOG_FILE)
+    assert_eq(
+        len(heal_log_records_final), 3,
+        "heal_log.jsonl 条数应等于 CLI heal 调用次数 (2+1=3)"
+    )
+    print(f"  heal_log.jsonl 最终: {len(heal_log_records_final)} 条")
 
     step("所有断言通过 ✓")
     print(f"\n证据目录保留: {TEST_ROOT}")

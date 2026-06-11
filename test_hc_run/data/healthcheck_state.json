@@ -1,79 +1,25 @@
 {
-  "last_check_time": "2026-06-12T03:12:30.385041",
-  "last_findings": [
-    {
-      "fingerprint": "61a5c59551819d10",
-      "category": "config_drift",
-      "severity": "warning",
-      "description": "配置变更导致目标路径偏移: 2024-B002-001.pdf 实际在 D:\\workSpace\\AI__SPACE\\zzz-00030\\test_hc_run\\target\\2024-B002, 当前配置指向 D:\\workSpace\\AI__SPACE\\zzz-00030\\test_hc_run\\target_v2\\2024-B002",
-      "file_path": "D:\\workSpace\\AI__SPACE\\zzz-00030\\test_hc_run\\target\\2024-B002\\2024-B002-001.pdf",
-      "queue_path": null,
-      "batch_id": "",
-      "action_id": "f9b329c3528c",
-      "detail": {
-        "actual_dir": "D:\\workSpace\\AI__SPACE\\zzz-00030\\test_hc_run\\target\\2024-B002",
-        "expected_dir": "D:\\workSpace\\AI__SPACE\\zzz-00030\\test_hc_run\\target_v2\\2024-B002",
-        "action_source": "D:\\workSpace\\AI__SPACE\\zzz-00030\\test_hc_run\\intake\\2024-B002-001.pdf"
-      },
-      "fixable": false,
-      "fix_description": "配置已变更,旧记录路径与新配置不匹配,需人工确认"
-    },
-    {
-      "fingerprint": "6531cfaa81764e41",
-      "category": "error_queue_inconsistency",
-      "severity": "warning",
-      "description": "processing_queue 标记 failed 但不在 error_queue 中: 2024-B002-001.pdf",
-      "file_path": "D:\\workSpace\\AI__SPACE\\zzz-00030\\test_hc_run\\intake\\2024-B002-001.pdf",
-      "queue_path": null,
-      "batch_id": null,
-      "action_id": null,
-      "detail": {
-        "path": "D:\\workSpace\\AI__SPACE\\zzz-00030\\test_hc_run\\intake\\2024-B002-001.pdf",
-        "queue_status": "failed"
-      },
-      "fixable": false,
-      "fix_description": "需人工确认是否应加入error_queue"
-    },
-    {
-      "fingerprint": "b2ca2f27b8e8cc1b",
-      "category": "error_queue_inconsistency",
-      "severity": "warning",
-      "description": "processing_queue 标记 failed 但不在 error_queue 中: 2024-C003-001.pdf",
-      "file_path": "D:\\workSpace\\AI__SPACE\\zzz-00030\\test_hc_run\\intake\\2024-C003-001.pdf",
-      "queue_path": null,
-      "batch_id": null,
-      "action_id": null,
-      "detail": {
-        "path": "D:\\workSpace\\AI__SPACE\\zzz-00030\\test_hc_run\\intake\\2024-C003-001.pdf",
-        "queue_status": "failed"
-      },
-      "fixable": false,
-      "fix_description": "需人工确认是否应加入error_queue"
-    }
-  ],
-  "finding_fingerprints": [
-    "61a5c59551819d10",
-    "6531cfaa81764e41",
-    "b2ca2f27b8e8cc1b"
-  ],
+  "last_check_time": "2026-06-12T03:30:50.021651",
+  "last_findings": [],
+  "finding_fingerprints": [],
   "heal_logs": [
     {
-      "timestamp": "2026-06-12T03:12:30.355305",
+      "timestamp": "2026-06-12T03:30:49.968422",
       "dry_run": true,
       "actions": [
         {
           "fingerprint": "e0c4052f65729312",
           "category": "queue_file_mismatch",
           "applied": false,
-          "description": "[dry-run] queue done→failed: D:\\workSpace\\AI__SPACE\\zzz-00030\\test_hc_run\\intake\\2024-B002-001.pdf (文件仍在intake,标记为failed)",
-          "reason": "done状态文件仍在intake,说明移动未成功,修正为failed"
+          "description": "[dry-run] queue done→failed: D:\\workSpace\\AI__SPACE\\zzz-00030\\test_hc_run\\intake\\2024-B002-001.pdf (文件仍在intake,标记为failed并补入error_queue)",
+          "reason": "done状态文件仍在intake,说明移动未成功,修正为failed并补入error_queue"
         },
         {
           "fingerprint": "39bd50d8ac0441fc",
           "category": "queue_file_mismatch",
           "applied": false,
-          "description": "[dry-run] queue done→failed: D:\\workSpace\\AI__SPACE\\zzz-00030\\test_hc_run\\intake\\2024-C003-001.pdf (源文件不在intake,目标也不在,标记为failed)",
-          "reason": "文件已从intake移走但目标也不存在,修正队列状态为failed"
+          "description": "[dry-run] queue done→failed: D:\\workSpace\\AI__SPACE\\zzz-00030\\test_hc_run\\intake\\2024-C003-001.pdf (源文件不在intake,目标也不在,标记为failed并补入error_queue)",
+          "reason": "文件已从intake移走但目标也不存在,修正队列状态为failed并补入error_queue"
         },
         {
           "fingerprint": "11d7a08a7b020e8a",
@@ -86,8 +32,8 @@
           "fingerprint": "a6b6bf7eaf601f01",
           "category": "queue_stale_done",
           "applied": false,
-          "description": "[dry-run] queue done→failed: D:\\workSpace\\AI__SPACE\\zzz-00030\\test_hc_run\\intake\\2024-C003-001.pdf (目标文件 D:\\workSpace\\AI__SPACE\\zzz-00030\\test_hc_run\\target\\2024-C003\\2024-C003-001.pdf 不存在)",
-          "reason": "目标文件被外部删除,修正队列状态"
+          "description": "[dry-run] queue done→failed: D:\\workSpace\\AI__SPACE\\zzz-00030\\test_hc_run\\intake\\2024-C003-001.pdf (目标文件 D:\\workSpace\\AI__SPACE\\zzz-00030\\test_hc_run\\target\\2024-C003\\2024-C003-001.pdf 不存在,补入error_queue)",
+          "reason": "目标文件被外部删除,修正队列状态并补入error_queue"
         },
         {
           "fingerprint": "d72ac198accf4a37",
@@ -100,28 +46,28 @@
           "fingerprint": "1775c8b21de41da4",
           "category": "error_queue_inconsistency",
           "applied": false,
-          "description": "[dry-run] 移出error_queue: D:\\workSpace\\AI__SPACE\\zzz-00030\\test_hc_run\\intake\\2024-B002-001.pdf (processing_queue已为done)",
-          "reason": "队列已标记done但error_queue仍有残留,清理"
+          "description": "[dry-run] 移出error_queue: D:\\workSpace\\AI__SPACE\\zzz-00030\\test_hc_run\\intake\\2024-B002-001.pdf (processing_queue当前为done)",
+          "reason": "队列当前标记done但error_queue仍有残留,清理"
         }
       ]
     },
     {
-      "timestamp": "2026-06-12T03:12:30.355305",
+      "timestamp": "2026-06-12T03:30:49.979697",
       "dry_run": false,
       "actions": [
         {
           "fingerprint": "e0c4052f65729312",
           "category": "queue_file_mismatch",
           "applied": true,
-          "description": "queue done→failed: D:\\workSpace\\AI__SPACE\\zzz-00030\\test_hc_run\\intake\\2024-B002-001.pdf (文件仍在intake,标记为failed)",
-          "reason": "done状态文件仍在intake,说明移动未成功,修正为failed"
+          "description": "queue done→failed: D:\\workSpace\\AI__SPACE\\zzz-00030\\test_hc_run\\intake\\2024-B002-001.pdf (文件仍在intake,标记为failed并补入error_queue)",
+          "reason": "done状态文件仍在intake,说明移动未成功,修正为failed并补入error_queue"
         },
         {
           "fingerprint": "39bd50d8ac0441fc",
           "category": "queue_file_mismatch",
           "applied": true,
-          "description": "queue done→failed: D:\\workSpace\\AI__SPACE\\zzz-00030\\test_hc_run\\intake\\2024-C003-001.pdf (源文件不在intake,目标也不在,标记为failed)",
-          "reason": "文件已从intake移走但目标也不存在,修正队列状态为failed"
+          "description": "queue done→failed: D:\\workSpace\\AI__SPACE\\zzz-00030\\test_hc_run\\intake\\2024-C003-001.pdf (源文件不在intake,目标也不在,标记为failed并补入error_queue)",
+          "reason": "文件已从intake移走但目标也不存在,修正队列状态为failed并补入error_queue"
         },
         {
           "fingerprint": "11d7a08a7b020e8a",
@@ -134,8 +80,8 @@
           "fingerprint": "a6b6bf7eaf601f01",
           "category": "queue_stale_done",
           "applied": true,
-          "description": "queue done→failed: D:\\workSpace\\AI__SPACE\\zzz-00030\\test_hc_run\\intake\\2024-C003-001.pdf (目标文件 D:\\workSpace\\AI__SPACE\\zzz-00030\\test_hc_run\\target\\2024-C003\\2024-C003-001.pdf 不存在)",
-          "reason": "目标文件被外部删除,修正队列状态"
+          "description": "queue done→failed: D:\\workSpace\\AI__SPACE\\zzz-00030\\test_hc_run\\intake\\2024-C003-001.pdf (目标文件 D:\\workSpace\\AI__SPACE\\zzz-00030\\test_hc_run\\target\\2024-C003\\2024-C003-001.pdf 不存在,补入error_queue)",
+          "reason": "目标文件被外部删除,修正队列状态并补入error_queue"
         },
         {
           "fingerprint": "d72ac198accf4a37",
@@ -148,8 +94,21 @@
           "fingerprint": "1775c8b21de41da4",
           "category": "error_queue_inconsistency",
           "applied": true,
-          "description": "移出error_queue: D:\\workSpace\\AI__SPACE\\zzz-00030\\test_hc_run\\intake\\2024-B002-001.pdf (processing_queue已为done)",
-          "reason": "队列已标记done但error_queue仍有残留,清理"
+          "description": "补入error_queue: D:\\workSpace\\AI__SPACE\\zzz-00030\\test_hc_run\\intake\\2024-B002-001.pdf (processing_queue当前为failed但error_queue无此条目)",
+          "reason": "processing_queue当前标记failed但error_queue缺失,补入error_queue"
+        }
+      ]
+    },
+    {
+      "timestamp": "2026-06-12T03:30:50.018344",
+      "dry_run": false,
+      "actions": [
+        {
+          "fingerprint": "50b4adf8e17b23fa",
+          "category": "error_queue_inconsistency",
+          "applied": true,
+          "description": "补入error_queue: D:\\workSpace\\AI__SPACE\\zzz-00030\\test_hc_run\\intake\\2024-D004-001.pdf (processing_queue当前为failed但error_queue无此条目)",
+          "reason": "processing_queue当前标记failed但error_queue缺失,补入error_queue"
         }
       ]
     }

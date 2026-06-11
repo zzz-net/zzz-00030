@@ -1,8 +1,8 @@
 from __future__ import annotations
 
 import hashlib
-import json
 import os
+import re
 from dataclasses import dataclass, field
 from datetime import datetime
 from enum import Enum
@@ -10,9 +10,9 @@ from typing import Optional
 
 from scan_sorter.action_logger import ActionLogger
 from scan_sorter.config import AppConfig
-from scan_sorter.models import BatchRecord
+from scan_sorter.models import BatchRecord, ErrorItem
 from scan_sorter.queue_manager import ErrorQueue, ProcessingQueue
-from scan_sorter.utils import append_jsonl, load_json, read_jsonl, save_json
+from scan_sorter.utils import load_json, read_jsonl, save_json
 
 
 class Severity(str, Enum):
@@ -203,26 +203,7 @@ class HealthChecker:
             action = self._heal_one(f, dry_run)
             actions.append(action)
         self.state.save_heal_log(actions, dry_run)
-        self._append_heal_log(actions, dry_run)
         return actions
-
-    def _append_heal_log(
-        self, actions: list[HealAction], dry_run: bool
-    ) -> None:
-        log_path = os.path.join(
-            self.config.logging.dir, "heal_log.jsonl"
-        )
-        applied = [a for a in actions if a.applied]
-        skipped = [a for a in actions if not a.applied]
-        log_entry = {
-            "timestamp": datetime.now().isoformat(),
-            "dry_run": dry_run,
-            "total_actions": len(actions),
-            "applied_count": len(applied),
-            "skipped_count": len(skipped),
-            "actions": [a.to_dict() for a in actions],
-        }
-        append_jsonl(log_path, log_entry)
 
     def _heal_one(self, f: Finding, dry_run: bool) -> HealAction:
         if f.category == FindingCategory.QUEUE_FILE_MISMATCH:
@@ -244,6 +225,23 @@ class HealthChecker:
                 reason=f"category={f.category.value} 无自动修复策略",
             )
 
+    def _ensure_error_item(self, file_path: str, error_msg: str) -> None:
+        existing = self.error_queue.find_by_path(file_path)
+        if existing:
+            return
+        filename = os.path.basename(file_path)
+        case_number = None
+        m = re.search(self.config.rules.case_number_pattern, filename)
+        if m:
+            case_number = m.group(1)
+        self.error_queue.add(ErrorItem(
+            path=file_path,
+            filename=filename,
+            case_number=case_number,
+            error=error_msg,
+            retry_count=0,
+        ))
+
     def _heal_queue_file_mismatch(
         self, f: Finding, dry_run: bool
     ) -> HealAction:
@@ -254,22 +252,28 @@ class HealthChecker:
             if not os.path.exists(file_path):
                 if not dry_run:
                     self.processing_queue.mark_failed(file_path)
+                    self._ensure_error_item(
+                        file_path, "heal修正:队列done但源文件和目标都不存在"
+                    )
                 return HealAction(
                     fingerprint=f.fingerprint,
                     category=f.category,
                     applied=not dry_run,
-                    description=f"{'[dry-run] ' if dry_run else ''}queue done→failed: {file_path} (源文件不在intake,目标也不在,标记为failed)",
-                    reason="文件已从intake移走但目标也不存在,修正队列状态为failed",
+                    description=f"{'[dry-run] ' if dry_run else ''}queue done→failed: {file_path} (源文件不在intake,目标也不在,标记为failed并补入error_queue)",
+                    reason="文件已从intake移走但目标也不存在,修正队列状态为failed并补入error_queue",
                 )
             if os.path.exists(file_path) and self._is_in_intake(file_path):
                 if not dry_run:
                     self.processing_queue.mark_failed(file_path)
+                    self._ensure_error_item(
+                        file_path, "heal修正:队列done但文件仍在intake"
+                    )
                 return HealAction(
                     fingerprint=f.fingerprint,
                     category=f.category,
                     applied=not dry_run,
-                    description=f"{'[dry-run] ' if dry_run else ''}queue done→failed: {file_path} (文件仍在intake,标记为failed)",
-                    reason="done状态文件仍在intake,说明移动未成功,修正为failed",
+                    description=f"{'[dry-run] ' if dry_run else ''}queue done→failed: {file_path} (文件仍在intake,标记为failed并补入error_queue)",
+                    reason="done状态文件仍在intake,说明移动未成功,修正为failed并补入error_queue",
                 )
         elif queue_status == "failed":
             if os.path.exists(file_path) and not self._is_in_intake(file_path):
@@ -321,12 +325,15 @@ class HealthChecker:
             )
         if not dry_run:
             self.processing_queue.mark_failed(file_path)
+            self._ensure_error_item(
+                file_path, f"heal修正:目标文件 {target_path} 被外部删除"
+            )
         return HealAction(
             fingerprint=f.fingerprint,
             category=f.category,
             applied=not dry_run,
-            description=f"{'[dry-run] ' if dry_run else ''}queue done→failed: {file_path} (目标文件 {target_path} 不存在)",
-            reason="目标文件被外部删除,修正队列状态",
+            description=f"{'[dry-run] ' if dry_run else ''}queue done→failed: {file_path} (目标文件 {target_path} 不存在,补入error_queue)",
+            reason="目标文件被外部删除,修正队列状态并补入error_queue",
         )
 
     def _heal_error_queue_inconsistency(
@@ -334,23 +341,54 @@ class HealthChecker:
     ) -> HealAction:
         file_path = f.file_path or ""
         detail = f.detail or {}
-        queue_status = detail.get("queue_status", "")
-        if queue_status == "done":
+        current_item = self.processing_queue.find_by_path(file_path)
+        current_status = current_item.get("status", "") if current_item else "missing"
+        if current_status == "done":
             if not dry_run:
                 self.error_queue.remove(file_path)
             return HealAction(
                 fingerprint=f.fingerprint,
                 category=f.category,
                 applied=not dry_run,
-                description=f"{'[dry-run] ' if dry_run else ''}移出error_queue: {file_path} (processing_queue已为done)",
-                reason="队列已标记done但error_queue仍有残留,清理",
+                description=f"{'[dry-run] ' if dry_run else ''}移出error_queue: {file_path} (processing_queue当前为done)",
+                reason="队列当前标记done但error_queue仍有残留,清理",
+            )
+        if current_status == "failed":
+            if not dry_run:
+                self._ensure_error_item(
+                    file_path, "heal修正:processing_queue为failed但error_queue缺失"
+                )
+            return HealAction(
+                fingerprint=f.fingerprint,
+                category=f.category,
+                applied=not dry_run,
+                description=f"{'[dry-run] ' if dry_run else ''}补入error_queue: {file_path} (processing_queue当前为failed但error_queue无此条目)",
+                reason="processing_queue当前标记failed但error_queue缺失,补入error_queue",
+            )
+        if current_status == "missing":
+            if not dry_run:
+                self.error_queue.remove(file_path)
+            return HealAction(
+                fingerprint=f.fingerprint,
+                category=f.category,
+                applied=not dry_run,
+                description=f"{'[dry-run] ' if dry_run else ''}移出error_queue: {file_path} (processing_queue已无此记录)",
+                reason="processing_queue已无此条目,清理error_queue残留",
+            )
+        if dry_run:
+            return HealAction(
+                fingerprint=f.fingerprint,
+                category=f.category,
+                applied=False,
+                description=f"[dry-run] 跳过: {file_path} (当前状态={current_status})",
+                reason=f"队列当前状态为{current_status},不能自动处理",
             )
         return HealAction(
             fingerprint=f.fingerprint,
             category=f.category,
             applied=False,
             description=f"跳过: {f.description}",
-            reason=f"队列状态为{queue_status},不能简单清理",
+            reason=f"队列当前状态为{current_status},不能自动处理",
         )
 
     def _heal_rolled_back_file_missing(
@@ -369,12 +407,15 @@ class HealthChecker:
             )
         if not dry_run:
             self.processing_queue.mark_failed(file_path)
+            self._ensure_error_item(
+                file_path, "heal修正:回滚后文件既不在intake也不在target"
+            )
         return HealAction(
             fingerprint=f.fingerprint,
             category=f.category,
             applied=not dry_run,
-            description=f"{'[dry-run] ' if dry_run else ''}queue rolled_back→failed: {file_path} (源和目标都不在,标记failed)",
-            reason="回滚后文件既不在intake也不在target,修正为failed",
+            description=f"{'[dry-run] ' if dry_run else ''}queue rolled_back→failed: {file_path} (源和目标都不在,标记failed并补入error_queue)",
+            reason="回滚后文件既不在intake也不在target,修正为failed并补入error_queue",
         )
 
     def _is_in_intake(self, file_path: str) -> bool:
@@ -565,8 +606,14 @@ class HealthChecker:
     def _check_error_queue_stale(self) -> list[Finding]:
         findings: list[Finding] = []
         items = self.error_queue.all()
+        queue_items = self.processing_queue.all()
+        queue_failed_paths = {
+            q["path"] for q in queue_items if q.get("status") == "failed"
+        }
         for item in items:
             if not os.path.exists(item.path):
+                if item.path in queue_failed_paths:
+                    continue
                 findings.append(Finding(
                     fingerprint=_make_fingerprint(
                         FindingCategory.ERROR_QUEUE_STALE.value,
@@ -664,8 +711,8 @@ class HealthChecker:
                     description=f"processing_queue 标记 failed 但不在 error_queue 中: {os.path.basename(q['path'])}",
                     file_path=q["path"],
                     detail={"path": q["path"], "queue_status": "failed"},
-                    fixable=False,
-                    fix_description="需人工确认是否应加入error_queue",
+                    fixable=True,
+                    fix_description="补入error_queue",
                 ))
         return findings
 

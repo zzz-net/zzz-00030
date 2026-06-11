@@ -113,6 +113,12 @@ class ProcessingQueue:
     def all(self) -> list[dict]:
         return list(self._items)
 
+    def find_by_path(self, path: str) -> dict | None:
+        for item in self._items:
+            if item["path"] == path:
+                return item
+        return None
+
     def count(self) -> int:
         return len(self._items)
 
