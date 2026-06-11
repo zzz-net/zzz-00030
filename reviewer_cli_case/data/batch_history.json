@@ -1,0 +1,18 @@
+[
+  {
+    "batch_id": "64d66a3a",
+    "created_at": "2026-06-12T02:44:18.320917",
+    "operator": "reviewer",
+    "status": "partial_failed",
+    "total": 3,
+    "succeeded": 1,
+    "failed": 2,
+    "action_ids": [
+      "abe518cbb13d"
+    ],
+    "error_file_paths": [
+      "D:\\workSpace\\AI__SPACE\\zzz-00030\\reviewer_cli_case\\intake\\2026-R200-001.pdf",
+      "D:\\workSpace\\AI__SPACE\\zzz-00030\\reviewer_cli_case\\intake\\bad name#.pdf"
+    ]
+  }
+]

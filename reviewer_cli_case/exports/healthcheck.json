@@ -1,0 +1,81 @@
+[
+  {
+    "fingerprint": "a595eb31ebcac410",
+    "category": "queue_file_mismatch",
+    "severity": "critical",
+    "description": "队列标记done但文件仍在intake: 2026-R100-001.pdf",
+    "file_path": "D:\\workSpace\\AI__SPACE\\zzz-00030\\reviewer_cli_case\\intake\\2026-R100-001.pdf",
+    "queue_path": "D:\\workSpace\\AI__SPACE\\zzz-00030\\reviewer_cli_case\\data\\queue.json",
+    "batch_id": null,
+    "action_id": null,
+    "detail": {
+      "queue_status": "done",
+      "actual_location": "intake"
+    },
+    "fixable": true,
+    "fix_description": "将队列状态修正为failed"
+  },
+  {
+    "fingerprint": "1c2a19bcae4ce1d4",
+    "category": "target_occupied",
+    "severity": "warning",
+    "description": "目标路径被非本工具占用的文件阻挡: D:\\workSpace\\AI__SPACE\\zzz-00030\\reviewer_cli_case\\target\\2026-R200\\2026-R200-001.pdf",
+    "file_path": "D:\\workSpace\\AI__SPACE\\zzz-00030\\reviewer_cli_case\\target\\2026-R200\\2026-R200-001.pdf",
+    "queue_path": null,
+    "batch_id": null,
+    "action_id": null,
+    "detail": {
+      "error_item_path": "D:\\workSpace\\AI__SPACE\\zzz-00030\\reviewer_cli_case\\intake\\2026-R200-001.pdf",
+      "target_path": "D:\\workSpace\\AI__SPACE\\zzz-00030\\reviewer_cli_case\\target\\2026-R200\\2026-R200-001.pdf"
+    },
+    "fixable": false,
+    "fix_description": "需人工移除或确认占用文件"
+  },
+  {
+    "fingerprint": "10294c15e8ab1770",
+    "category": "orphan_action",
+    "severity": "warning",
+    "description": "动作日志中存在批次 orphan-batch-001 的记录,但 batch_history.json 中无此批次",
+    "file_path": null,
+    "queue_path": null,
+    "batch_id": "orphan-batch-001",
+    "action_id": null,
+    "detail": {
+      "orphan_batch_id": "orphan-batch-001"
+    },
+    "fixable": false,
+    "fix_description": "需人工确认是否应补充批次记录或清理孤立动作"
+  },
+  {
+    "fingerprint": "8d8d89833fb2eb47",
+    "category": "error_queue_stale",
+    "severity": "warning",
+    "description": "error_queue 中文件已不存在: 2026-G999-001.pdf",
+    "file_path": "D:\\workSpace\\AI__SPACE\\zzz-00030\\reviewer_cli_case\\intake\\2026-G999-001.pdf",
+    "queue_path": null,
+    "batch_id": null,
+    "action_id": null,
+    "detail": {
+      "path": "D:\\workSpace\\AI__SPACE\\zzz-00030\\reviewer_cli_case\\intake\\2026-G999-001.pdf",
+      "error": "reviewer ghost"
+    },
+    "fixable": true,
+    "fix_description": "从error_queue中移除此条目"
+  },
+  {
+    "fingerprint": "cf16297a0613c488",
+    "category": "error_queue_inconsistency",
+    "severity": "warning",
+    "description": "error_queue 文件不在 processing_queue 中: 2026-G999-001.pdf",
+    "file_path": "D:\\workSpace\\AI__SPACE\\zzz-00030\\reviewer_cli_case\\intake\\2026-G999-001.pdf",
+    "queue_path": null,
+    "batch_id": null,
+    "action_id": null,
+    "detail": {
+      "path": "D:\\workSpace\\AI__SPACE\\zzz-00030\\reviewer_cli_case\\intake\\2026-G999-001.pdf",
+      "queue_status": "missing"
+    },
+    "fixable": false,
+    "fix_description": "processing_queue无此记录,需人工确认"
+  }
+]

@@ -1,0 +1,8 @@
+﻿fingerprint,category,severity,description,file_path,queue_path,batch_id,action_id,fixable,fix_description
+1917f59dbd018f84,queue_file_mismatch,critical,队列标记done但文件仍在intake: 2026-R100-001.pdf,D:\workSpace\AI__SPACE\zzz-00030\codex_review_case\intake\2026-R100-001.pdf,D:\workSpace\AI__SPACE\zzz-00030\codex_review_case\data\queue.json,,,True,将队列状态修正为failed
+383e31099d7e8764,target_occupied,warning,目标路径被非本工具占用的文件阻挡: D:\workSpace\AI__SPACE\zzz-00030\codex_review_case\target\2026-R300\2026-R300-001.pdf,D:\workSpace\AI__SPACE\zzz-00030\codex_review_case\target\2026-R300\2026-R300-001.pdf,,,,False,需人工移除或确认占用文件
+77dd6ee0f3374c53,orphan_action,warning,"动作日志中存在批次 orphan-batch 的记录,但 batch_history.json 中无此批次",,,orphan-batch,,False,需人工确认是否应补充批次记录或清理孤立动作
+eec3d6fde584b22c,error_queue_stale,warning,error_queue 中文件已不存在: ghost.pdf,D:\workSpace\AI__SPACE\zzz-00030\codex_review_case\intake\ghost.pdf,,,,True,从error_queue中移除此条目
+40ae65c7ed0e6959,error_queue_stale,warning,error_queue 中文件已不存在: 2026-R200-001.pdf,D:\workSpace\AI__SPACE\zzz-00030\codex_review_case\intake\2026-R200-001.pdf,,,,True,从error_queue中移除此条目
+8c534502a4157b18,error_queue_inconsistency,warning,error_queue 文件不在 processing_queue 中: ghost.pdf,D:\workSpace\AI__SPACE\zzz-00030\codex_review_case\intake\ghost.pdf,,,,False,"processing_queue无此记录,需人工确认"
+558f80555af69392,error_queue_inconsistency,critical,error_queue 文件在 processing_queue 状态为 done: 2026-R200-001.pdf,D:\workSpace\AI__SPACE\zzz-00030\codex_review_case\intake\2026-R200-001.pdf,,,,True,从error_queue中移除此条目

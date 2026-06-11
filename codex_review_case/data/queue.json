@@ -1,0 +1,32 @@
+[
+  {
+    "path": "D:\\workSpace\\AI__SPACE\\zzz-00030\\codex_review_case\\intake\\2026-R100-001.pdf",
+    "case_number": "2026-R100",
+    "status": "failed",
+    "filename": "2026-R100-001.pdf"
+  },
+  {
+    "path": "D:\\workSpace\\AI__SPACE\\zzz-00030\\codex_review_case\\intake\\2026-R200-001.pdf",
+    "case_number": "2026-R200",
+    "status": "done",
+    "filename": "2026-R200-001.pdf"
+  },
+  {
+    "path": "D:\\workSpace\\AI__SPACE\\zzz-00030\\codex_review_case\\intake\\bad name#.pdf",
+    "case_number": null,
+    "status": "failed",
+    "filename": "bad name#.pdf"
+  },
+  {
+    "path": "D:\\workSpace\\AI__SPACE\\zzz-00030\\codex_review_case\\intake\\2026-R300-001.pdf",
+    "case_number": "2026-R300",
+    "status": "failed",
+    "filename": "2026-R300-001.pdf"
+  },
+  {
+    "path": "D:\\workSpace\\AI__SPACE\\zzz-00030\\codex_review_case\\intake\\bad name#.pdf",
+    "case_number": null,
+    "status": "failed",
+    "filename": "bad name#.pdf"
+  }
+]

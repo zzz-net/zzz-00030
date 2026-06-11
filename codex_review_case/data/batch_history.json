@@ -1,0 +1,18 @@
+[
+  {
+    "batch_id": "262db951",
+    "created_at": "2026-06-12T03:09:03.155631",
+    "operator": "reviewer",
+    "status": "partial_failed",
+    "total": 3,
+    "succeeded": 2,
+    "failed": 1,
+    "action_ids": [
+      "2d7704c462bb",
+      "53c6adff8ebf"
+    ],
+    "error_file_paths": [
+      "D:\\workSpace\\AI__SPACE\\zzz-00030\\codex_review_case\\intake\\bad name#.pdf"
+    ]
+  }
+]

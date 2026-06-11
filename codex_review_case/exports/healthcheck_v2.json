@@ -1,0 +1,131 @@
+[
+  {
+    "fingerprint": "1917f59dbd018f84",
+    "category": "queue_file_mismatch",
+    "severity": "critical",
+    "description": "队列标记done但文件仍在intake: 2026-R100-001.pdf",
+    "file_path": "D:\\workSpace\\AI__SPACE\\zzz-00030\\codex_review_case\\intake\\2026-R100-001.pdf",
+    "queue_path": "D:\\workSpace\\AI__SPACE\\zzz-00030\\codex_review_case\\data\\queue.json",
+    "batch_id": null,
+    "action_id": null,
+    "detail": {
+      "queue_status": "done",
+      "actual_location": "intake"
+    },
+    "fixable": true,
+    "fix_description": "将队列状态修正为failed"
+  },
+  {
+    "fingerprint": "9474425402908f51",
+    "category": "config_drift",
+    "severity": "warning",
+    "description": "配置变更导致目标路径偏移: 2026-R100-001.pdf 实际在 D:\\workSpace\\AI__SPACE\\zzz-00030\\codex_review_case\\target\\2026-R100, 当前配置指向 D:\\workSpace\\AI__SPACE\\zzz-00030\\codex_review_case\\target_v2\\2026-R100",
+    "file_path": "D:\\workSpace\\AI__SPACE\\zzz-00030\\codex_review_case\\target\\2026-R100\\2026-R100-001.pdf",
+    "queue_path": null,
+    "batch_id": "262db951",
+    "action_id": "2d7704c462bb",
+    "detail": {
+      "actual_dir": "D:\\workSpace\\AI__SPACE\\zzz-00030\\codex_review_case\\target\\2026-R100",
+      "expected_dir": "D:\\workSpace\\AI__SPACE\\zzz-00030\\codex_review_case\\target_v2\\2026-R100",
+      "action_source": "D:\\workSpace\\AI__SPACE\\zzz-00030\\codex_review_case\\intake\\2026-R100-001.pdf"
+    },
+    "fixable": false,
+    "fix_description": "配置已变更,旧记录路径与新配置不匹配,需人工确认"
+  },
+  {
+    "fingerprint": "c04eb6055ef13615",
+    "category": "config_drift",
+    "severity": "warning",
+    "description": "配置变更导致目标路径偏移: 2026-R200-001.pdf 实际在 D:\\workSpace\\AI__SPACE\\zzz-00030\\codex_review_case\\target\\2026-R200, 当前配置指向 D:\\workSpace\\AI__SPACE\\zzz-00030\\codex_review_case\\target_v2\\2026-R200",
+    "file_path": "D:\\workSpace\\AI__SPACE\\zzz-00030\\codex_review_case\\target\\2026-R200\\2026-R200-001.pdf",
+    "queue_path": null,
+    "batch_id": "262db951",
+    "action_id": "53c6adff8ebf",
+    "detail": {
+      "actual_dir": "D:\\workSpace\\AI__SPACE\\zzz-00030\\codex_review_case\\target\\2026-R200",
+      "expected_dir": "D:\\workSpace\\AI__SPACE\\zzz-00030\\codex_review_case\\target_v2\\2026-R200",
+      "action_source": "D:\\workSpace\\AI__SPACE\\zzz-00030\\codex_review_case\\intake\\2026-R200-001.pdf"
+    },
+    "fixable": false,
+    "fix_description": "配置已变更,旧记录路径与新配置不匹配,需人工确认"
+  },
+  {
+    "fingerprint": "77dd6ee0f3374c53",
+    "category": "orphan_action",
+    "severity": "warning",
+    "description": "动作日志中存在批次 orphan-batch 的记录,但 batch_history.json 中无此批次",
+    "file_path": null,
+    "queue_path": null,
+    "batch_id": "orphan-batch",
+    "action_id": null,
+    "detail": {
+      "orphan_batch_id": "orphan-batch"
+    },
+    "fixable": false,
+    "fix_description": "需人工确认是否应补充批次记录或清理孤立动作"
+  },
+  {
+    "fingerprint": "eec3d6fde584b22c",
+    "category": "error_queue_stale",
+    "severity": "warning",
+    "description": "error_queue 中文件已不存在: ghost.pdf",
+    "file_path": "D:\\workSpace\\AI__SPACE\\zzz-00030\\codex_review_case\\intake\\ghost.pdf",
+    "queue_path": null,
+    "batch_id": null,
+    "action_id": null,
+    "detail": {
+      "path": "D:\\workSpace\\AI__SPACE\\zzz-00030\\codex_review_case\\intake\\ghost.pdf",
+      "error": "ghost entry"
+    },
+    "fixable": true,
+    "fix_description": "从error_queue中移除此条目"
+  },
+  {
+    "fingerprint": "40ae65c7ed0e6959",
+    "category": "error_queue_stale",
+    "severity": "warning",
+    "description": "error_queue 中文件已不存在: 2026-R200-001.pdf",
+    "file_path": "D:\\workSpace\\AI__SPACE\\zzz-00030\\codex_review_case\\intake\\2026-R200-001.pdf",
+    "queue_path": null,
+    "batch_id": null,
+    "action_id": null,
+    "detail": {
+      "path": "D:\\workSpace\\AI__SPACE\\zzz-00030\\codex_review_case\\intake\\2026-R200-001.pdf",
+      "error": "forced reviewer inconsistency"
+    },
+    "fixable": true,
+    "fix_description": "从error_queue中移除此条目"
+  },
+  {
+    "fingerprint": "8c534502a4157b18",
+    "category": "error_queue_inconsistency",
+    "severity": "warning",
+    "description": "error_queue 文件不在 processing_queue 中: ghost.pdf",
+    "file_path": "D:\\workSpace\\AI__SPACE\\zzz-00030\\codex_review_case\\intake\\ghost.pdf",
+    "queue_path": null,
+    "batch_id": null,
+    "action_id": null,
+    "detail": {
+      "path": "D:\\workSpace\\AI__SPACE\\zzz-00030\\codex_review_case\\intake\\ghost.pdf",
+      "queue_status": "missing"
+    },
+    "fixable": false,
+    "fix_description": "processing_queue无此记录,需人工确认"
+  },
+  {
+    "fingerprint": "558f80555af69392",
+    "category": "error_queue_inconsistency",
+    "severity": "critical",
+    "description": "error_queue 文件在 processing_queue 状态为 done: 2026-R200-001.pdf",
+    "file_path": "D:\\workSpace\\AI__SPACE\\zzz-00030\\codex_review_case\\intake\\2026-R200-001.pdf",
+    "queue_path": null,
+    "batch_id": null,
+    "action_id": null,
+    "detail": {
+      "path": "D:\\workSpace\\AI__SPACE\\zzz-00030\\codex_review_case\\intake\\2026-R200-001.pdf",
+      "queue_status": "done"
+    },
+    "fixable": true,
+    "fix_description": "从error_queue中移除此条目"
+  }
+]

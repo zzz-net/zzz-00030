@@ -9,6 +9,11 @@ import sys
 
 from scan_sorter.batch_manager import BatchManager
 from scan_sorter.config import load_config, reload_config
+from scan_sorter.healthcheck import (
+    HealthChecker,
+    export_findings_csv,
+    export_findings_json,
+)
 from scan_sorter.watcher import Watcher
 
 sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding="utf-8", errors="replace")
@@ -175,6 +180,126 @@ def cmd_reload(args: argparse.Namespace) -> None:
     print(json.dumps(new_config.to_dict(), ensure_ascii=False, indent=2))
 
 
+def cmd_healthcheck(args: argparse.Namespace) -> None:
+    config = load_config(args.config)
+    checker = HealthChecker(config)
+    findings = checker.check()
+
+    print(f"\n{'='*60}")
+    print(f"状态体检结果")
+    print(f"{'='*60}")
+
+    if not findings:
+        print("  未发现异常")
+    else:
+        critical = [f for f in findings if f.severity.value == "critical"]
+        warning = [f for f in findings if f.severity.value == "warning"]
+        info = [f for f in findings if f.severity.value == "info"]
+        fixable = [f for f in findings if f.fixable]
+
+        print(f"  总计: {len(findings)} 个问题")
+        if critical:
+            print(f"    严重: {len(critical)}")
+        if warning:
+            print(f"    警告: {len(warning)}")
+        if info:
+            print(f"    信息: {len(info)}")
+        if fixable:
+            print(f"    可修复: {len(fixable)}")
+
+        print()
+        for f in findings:
+            sev = {"critical": "✗", "warning": "⚠", "info": "ℹ"}[f.severity.value]
+            fix_tag = " [可修复]" if f.fixable else ""
+            print(f"  {sev} [{f.category.value}]{fix_tag} {f.description}")
+            if f.file_path:
+                print(f"     文件: {f.file_path}")
+            if f.batch_id:
+                print(f"     批次: {f.batch_id}")
+
+    last_check = checker.state.get_last_check_time()
+    if last_check:
+        print(f"\n  上次体检时间: {last_check}")
+
+    known = checker.state.get_known_fingerprints()
+    prev_findings = checker.state.get_last_findings()
+    if prev_findings and len(prev_findings) != len(findings):
+        new_fps = {f.fingerprint for f in findings} - {f.fingerprint for f in prev_findings}
+        resolved_fps = {f.fingerprint for f in prev_findings} - {f.fingerprint for f in findings}
+        if new_fps:
+            print(f"  新增问题: {len(new_fps)} 个")
+        if resolved_fps:
+            print(f"  已解决: {len(resolved_fps)} 个")
+
+    output_path = args.output
+    fmt = args.format
+    if output_path or fmt:
+        fmt = fmt or "json"
+        if not output_path:
+            output_path = f"healthcheck_result.{fmt}"
+        if fmt == "json":
+            export_findings_json(findings, output_path)
+            print(f"\n  体检结果已导出 JSON: {output_path}")
+        elif fmt == "csv":
+            export_findings_csv(findings, output_path)
+            print(f"\n  体检结果已导出 CSV: {output_path}")
+
+
+def cmd_heal(args: argparse.Namespace) -> None:
+    config = load_config(args.config)
+    checker = HealthChecker(config)
+    findings = checker.check()
+
+    fixable = [f for f in findings if f.fixable]
+    if not fixable:
+        print("无可修复的问题")
+        return
+
+    dry_run = not args.confirm
+    if dry_run:
+        print(f"\n{'='*60}")
+        print(f"恢复模式: dry-run (预览，不实际修改)")
+        print(f"{'='*60}")
+    else:
+        print(f"\n{'='*60}")
+        print(f"恢复模式: 实际执行")
+        print(f"{'='*60}")
+
+    fingerprints = None
+    if args.fingerprints:
+        fingerprints = set(args.fingerprints.split(","))
+
+    actions = checker.heal(findings, dry_run=dry_run, fingerprints=fingerprints)
+
+    applied = [a for a in actions if a.applied]
+    skipped = [a for a in actions if not a.applied]
+
+    print(f"\n  处理结果:")
+    print(f"    应用修复: {len(applied)}")
+    print(f"    跳过: {len(skipped)}")
+
+    for a in actions:
+        tag = "✓ 已修复" if a.applied else "✗ 跳过"
+        print(f"    {tag} [{a.category.value}] {a.description}")
+        if a.reason:
+            print(f"       原因: {a.reason}")
+
+    heal_log_path = os.path.join(
+        config.logging.dir, "heal_log.jsonl"
+    )
+    from scan_sorter.utils import append_jsonl
+    log_entry = {
+        "timestamp": __import__("datetime").datetime.now().isoformat(),
+        "dry_run": dry_run,
+        "total_actions": len(actions),
+        "applied_count": len(applied),
+        "skipped_count": len(skipped),
+        "actions": [a.to_dict() for a in actions],
+    }
+    append_jsonl(heal_log_path, log_entry)
+    print(f"\n  恢复日志已写入: {heal_log_path}")
+
+
 def _print_result(result: dict) -> None:
     for key, value in result.items():
         if key == "details":
@@ -237,6 +362,28 @@ def build_parser() -> argparse.ArgumentParser:
 
     p_reload = sub.add_parser("reload", help="重载配置")
 
+    p_healthcheck = sub.add_parser("healthcheck", help="状态体检:扫描各状态文件一致性")
+    p_healthcheck.add_argument(
+        "--format",
+        choices=["json", "csv"],
+        default=None,
+        help="导出格式 (不指定则不导出文件)",
+    )
+    p_healthcheck.add_argument("--output", help="体检结果导出路径")
+
+    p_heal = sub.add_parser("heal", help="恢复:修复体检发现的一致性问题")
+    p_heal.add_argument(
+        "--confirm",
+        action="store_true",
+        default=False,
+        help="确认实际执行 (默认 dry-run 预览)",
+    )
+    p_heal.add_argument(
+        "--fingerprints",
+        default=None,
+        help="只修复指定指纹的问题,逗号分隔",
+    )
+
     return parser
 
 
@@ -257,6 +404,8 @@ def main(argv: list[str] | None = None) -> int:
         "status": cmd_status,
         "export": cmd_export,
         "reload": cmd_reload,
+        "healthcheck": cmd_healthcheck,
+        "heal": cmd_heal,
     }
 
     handler = dispatch.get(args.command)

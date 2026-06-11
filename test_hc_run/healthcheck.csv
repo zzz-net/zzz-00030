@@ -1,0 +1,7 @@
+﻿fingerprint,category,severity,description,file_path,queue_path,batch_id,action_id,fixable,fix_description
+e0c4052f65729312,queue_file_mismatch,critical,队列标记done但文件仍在intake: 2024-B002-001.pdf,D:\workSpace\AI__SPACE\zzz-00030\test_hc_run\intake\2024-B002-001.pdf,D:\workSpace\AI__SPACE\zzz-00030\test_hc_run\data\queue.json,,,True,将队列状态修正为failed
+39bd50d8ac0441fc,queue_file_mismatch,critical,队列标记done但源文件和目标文件都不存在: 2024-C003-001.pdf,D:\workSpace\AI__SPACE\zzz-00030\test_hc_run\intake\2024-C003-001.pdf,D:\workSpace\AI__SPACE\zzz-00030\test_hc_run\data\queue.json,,,True,将队列状态修正为failed
+11d7a08a7b020e8a,error_queue_stale,warning,error_queue 中文件已不存在: 2024-G999-001.pdf,D:\workSpace\AI__SPACE\zzz-00030\test_hc_run\intake\2024-G999-001.pdf,,,,True,从error_queue中移除此条目
+a6b6bf7eaf601f01,queue_stale_done,critical,队列标记done但目标文件已被外部删除: 2024-C003-001.pdf,D:\workSpace\AI__SPACE\zzz-00030\test_hc_run\intake\2024-C003-001.pdf,,,,True,将队列状态修正为failed
+d72ac198accf4a37,error_queue_inconsistency,warning,error_queue 文件不在 processing_queue 中: 2024-G999-001.pdf,D:\workSpace\AI__SPACE\zzz-00030\test_hc_run\intake\2024-G999-001.pdf,,,,False,"processing_queue无此记录,需人工确认"
+1775c8b21de41da4,error_queue_inconsistency,critical,error_queue 文件在 processing_queue 状态为 done: 2024-B002-001.pdf,D:\workSpace\AI__SPACE\zzz-00030\test_hc_run\intake\2024-B002-001.pdf,,,,True,从error_queue中移除此条目

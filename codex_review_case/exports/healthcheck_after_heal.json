@@ -1,0 +1,49 @@
+[
+  {
+    "fingerprint": "383e31099d7e8764",
+    "category": "target_occupied",
+    "severity": "warning",
+    "description": "目标路径被非本工具占用的文件阻挡: D:\\workSpace\\AI__SPACE\\zzz-00030\\codex_review_case\\target\\2026-R300\\2026-R300-001.pdf",
+    "file_path": "D:\\workSpace\\AI__SPACE\\zzz-00030\\codex_review_case\\target\\2026-R300\\2026-R300-001.pdf",
+    "queue_path": null,
+    "batch_id": null,
+    "action_id": null,
+    "detail": {
+      "error_item_path": "D:\\workSpace\\AI__SPACE\\zzz-00030\\codex_review_case\\intake\\2026-R300-001.pdf",
+      "target_path": "D:\\workSpace\\AI__SPACE\\zzz-00030\\codex_review_case\\target\\2026-R300\\2026-R300-001.pdf"
+    },
+    "fixable": false,
+    "fix_description": "需人工移除或确认占用文件"
+  },
+  {
+    "fingerprint": "77dd6ee0f3374c53",
+    "category": "orphan_action",
+    "severity": "warning",
+    "description": "动作日志中存在批次 orphan-batch 的记录,但 batch_history.json 中无此批次",
+    "file_path": null,
+    "queue_path": null,
+    "batch_id": "orphan-batch",
+    "action_id": null,
+    "detail": {
+      "orphan_batch_id": "orphan-batch"
+    },
+    "fixable": false,
+    "fix_description": "需人工确认是否应补充批次记录或清理孤立动作"
+  },
+  {
+    "fingerprint": "8d2207c3876a4c8f",
+    "category": "error_queue_inconsistency",
+    "severity": "warning",
+    "description": "processing_queue 标记 failed 但不在 error_queue 中: 2026-R100-001.pdf",
+    "file_path": "D:\\workSpace\\AI__SPACE\\zzz-00030\\codex_review_case\\intake\\2026-R100-001.pdf",
+    "queue_path": null,
+    "batch_id": null,
+    "action_id": null,
+    "detail": {
+      "path": "D:\\workSpace\\AI__SPACE\\zzz-00030\\codex_review_case\\intake\\2026-R100-001.pdf",
+      "queue_status": "failed"
+    },
+    "fixable": false,
+    "fix_description": "需人工确认是否应加入error_queue"
+  }
+]
