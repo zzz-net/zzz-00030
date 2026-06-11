@@ -6,8 +6,8 @@
     "error": "文件名包含非法字符; 无法从文件名解析案卷号",
     "retry_count": 1,
     "max_retries": 3,
-    "added_at": "2026-06-12T03:30:49.908684",
-    "last_retry_at": "2026-06-12T03:30:49.913797",
+    "added_at": "2026-06-12T07:41:18.094581",
+    "last_retry_at": "2026-06-12T07:41:18.099475",
     "batch_id": null
   },
   {
@@ -17,7 +17,7 @@
     "error": "残留error_queue条目",
     "retry_count": 0,
     "max_retries": 3,
-    "added_at": "2026-06-12T03:30:49.922050",
+    "added_at": "2026-06-12T07:41:18.109808",
     "last_retry_at": null,
     "batch_id": null
   },
@@ -28,7 +28,7 @@
     "error": "heal修正:队列done但源文件和目标都不存在",
     "retry_count": 0,
     "max_retries": 3,
-    "added_at": "2026-06-12T03:30:49.978738",
+    "added_at": "2026-06-12T07:41:18.174890",
     "last_retry_at": null,
     "batch_id": null
   },
@@ -39,7 +39,7 @@
     "error": "heal修正:processing_queue为failed但error_queue缺失",
     "retry_count": 0,
     "max_retries": 3,
-    "added_at": "2026-06-12T03:30:50.018344",
+    "added_at": "2026-06-12T07:41:18.219054",
     "last_retry_at": null,
     "batch_id": null
   }

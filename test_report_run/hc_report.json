@@ -1,0 +1,120 @@
+{
+  "batches": [
+    {
+      "batch_id": "3d4620f5",
+      "status": "partial_failed",
+      "created_at": "2026-06-12T07:41:18.115092",
+      "operator": "report_test_op",
+      "total": 5,
+      "succeeded": 2,
+      "failed": 3,
+      "target_dirs": [
+        "D:\\workSpace\\AI__SPACE\\zzz-00030\\test_report_run\\target\\2024-A001",
+        "D:\\workSpace\\AI__SPACE\\zzz-00030\\test_report_run\\target\\2024-B002"
+      ],
+      "success_files": [
+        {
+          "filename": "2024-A001-001.pdf",
+          "source": "D:\\workSpace\\AI__SPACE\\zzz-00030\\test_report_run\\intake\\2024-A001-001.pdf",
+          "destination": "D:\\workSpace\\AI__SPACE\\zzz-00030\\test_report_run\\target\\2024-A001\\2024-A001-001.pdf",
+          "case_number": "2024-A001",
+          "timestamp": "2026-06-12T07:41:18.116056"
+        },
+        {
+          "filename": "2024-B002-001.pdf",
+          "source": "D:\\workSpace\\AI__SPACE\\zzz-00030\\test_report_run\\intake\\2024-B002-001.pdf",
+          "destination": "D:\\workSpace\\AI__SPACE\\zzz-00030\\test_report_run\\target\\2024-B002\\2024-B002-001.pdf",
+          "case_number": "2024-B002",
+          "timestamp": "2026-06-12T07:41:18.117036"
+        }
+      ],
+      "failed_files": [
+        {
+          "filename": "2024-A001-002.pdf",
+          "path": "D:\\workSpace\\AI__SPACE\\zzz-00030\\test_report_run\\intake\\2024-A001-002.pdf",
+          "error": "未知错误",
+          "in_error_queue": false,
+          "retry_count": 0
+        },
+        {
+          "filename": "2024-C003-001.pdf",
+          "path": "D:\\workSpace\\AI__SPACE\\zzz-00030\\test_report_run\\intake\\2024-C003-001.pdf",
+          "error": "未知错误",
+          "in_error_queue": false,
+          "retry_count": 0
+        },
+        {
+          "filename": "bad file#name.pdf",
+          "path": "D:\\workSpace\\AI__SPACE\\zzz-00030\\test_report_run\\intake\\bad file#name.pdf",
+          "error": "文件名包含非法字符; 无法从文件名解析案卷号",
+          "in_error_queue": true,
+          "retry_count": 0
+        }
+      ]
+    },
+    {
+      "batch_id": "2549de46",
+      "status": "partial_failed",
+      "created_at": "2026-06-12T07:41:18.182937",
+      "operator": "report_test_op",
+      "total": 2,
+      "succeeded": 1,
+      "failed": 1,
+      "target_dirs": [
+        "D:\\workSpace\\AI__SPACE\\zzz-00030\\test_report_run\\target_v2\\2024-D004"
+      ],
+      "success_files": [
+        {
+          "filename": "2024-D004-001.pdf",
+          "source": "D:\\workSpace\\AI__SPACE\\zzz-00030\\test_report_run\\intake\\2024-D004-001.pdf",
+          "destination": "D:\\workSpace\\AI__SPACE\\zzz-00030\\test_report_run\\target_v2\\2024-D004\\2024-D004-001.pdf",
+          "case_number": "2024-D004",
+          "timestamp": "2026-06-12T07:41:18.183887"
+        }
+      ],
+      "failed_files": [
+        {
+          "filename": "bad file#name.pdf",
+          "path": "D:\\workSpace\\AI__SPACE\\zzz-00030\\test_report_run\\intake\\bad file#name.pdf",
+          "error": "文件名包含非法字符; 无法从文件名解析案卷号",
+          "in_error_queue": true,
+          "retry_count": 0
+        }
+      ]
+    }
+  ],
+  "conflicts": [],
+  "retryable_items": [
+    {
+      "filename": "bad file#name.pdf",
+      "path": "D:\\workSpace\\AI__SPACE\\zzz-00030\\test_report_run\\intake\\bad file#name.pdf",
+      "error": "文件名包含非法字符; 无法从文件名解析案卷号",
+      "retry_count": 0,
+      "max_retries": 3,
+      "case_number": null,
+      "batch_id": null
+    }
+  ],
+  "healthcheck_summary": {
+    "last_check_time": "2026-06-12T07:41:18.212716",
+    "total_findings": 1,
+    "critical_count": 0,
+    "warning_count": 1,
+    "info_count": 0,
+    "fixable_count": 0
+  },
+  "config_info": {
+    "intake_dir": "D:\\workSpace\\AI__SPACE\\zzz-00030\\test_report_run\\intake",
+    "target_base": "D:\\workSpace\\AI__SPACE\\zzz-00030\\test_report_run\\target",
+    "target_structure": "{case_number}",
+    "operator": "report_test_op",
+    "action": "move",
+    "logging_dir": "D:\\workSpace\\AI__SPACE\\zzz-00030\\test_report_run\\data"
+  },
+  "warnings": [
+    "有 1 个失败项可重试",
+    "最近一次健康检查发现 1 个问题"
+  ],
+  "errors": [],
+  "generated_at": "2026-06-12T07:41:18.219054"
+}

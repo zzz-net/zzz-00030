@@ -1,0 +1,25 @@
+{
+  "last_check_time": "2026-06-12T07:41:18.212716",
+  "last_findings": [
+    {
+      "fingerprint": "d3e5921605ee45aa",
+      "category": "config_drift",
+      "severity": "warning",
+      "description": "配置变更导致目标路径偏移: 2024-D004-001.pdf 实际在 D:\\workSpace\\AI__SPACE\\zzz-00030\\test_report_run\\target_v2\\2024-D004, 当前配置指向 D:\\workSpace\\AI__SPACE\\zzz-00030\\test_report_run\\target\\2024-D004",
+      "file_path": "D:\\workSpace\\AI__SPACE\\zzz-00030\\test_report_run\\target_v2\\2024-D004\\2024-D004-001.pdf",
+      "queue_path": null,
+      "batch_id": "2549de46",
+      "action_id": "7d8107af0009",
+      "detail": {
+        "actual_dir": "D:\\workSpace\\AI__SPACE\\zzz-00030\\test_report_run\\target_v2\\2024-D004",
+        "expected_dir": "D:\\workSpace\\AI__SPACE\\zzz-00030\\test_report_run\\target\\2024-D004",
+        "action_source": "D:\\workSpace\\AI__SPACE\\zzz-00030\\test_report_run\\intake\\2024-D004-001.pdf"
+      },
+      "fixable": false,
+      "fix_description": "配置已变更,旧记录路径与新配置不匹配,需人工确认"
+    }
+  ],
+  "finding_fingerprints": [
+    "d3e5921605ee45aa"
+  ]
+}

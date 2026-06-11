@@ -1,0 +1,33 @@
+intake_dir: D:\workSpace\AI__SPACE\zzz-00030\test_report_run\intake
+target_base: D:\workSpace\AI__SPACE\zzz-00030\test_report_run\target
+operator: report_test_op
+
+rules:
+  case_number_pattern: "(\\d{4}-[A-Z]\\d{3})"
+  file_pattern: "(\\d{4}-[A-Z]\\d{3}-\\d{3})\\.(pdf|jpg|jpeg|png|tiff|bmp)$"
+  allowed_extensions:
+    - .pdf
+    - .jpg
+    - .jpeg
+    - .png
+    - .tiff
+    - .bmp
+  illegal_name_patterns:
+    - pattern: "[^a-zA-Z0-9\\-_\\.]"
+      message: "文件名包含非法字符"
+  target_structure: "{case_number}"
+  action: move
+
+batch:
+  max_size: 50
+  stop_on_failure_ratio: 0.5
+
+logging:
+  dir: D:\workSpace\AI__SPACE\zzz-00030\test_report_run\data
+  action_log: action_log.jsonl
+  queue_file: queue.json
+  error_queue_file: error_queue.json
+  batch_history_file: batch_history.json
+
+watch:
+  poll_interval: 5

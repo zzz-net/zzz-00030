@@ -14,6 +14,11 @@ from scan_sorter.healthcheck import (
     export_findings_csv,
     export_findings_json,
 )
+from scan_sorter.report import (
+    ReportGenerator,
+    export_report_json,
+    export_report_csv,
+)
 from scan_sorter.watcher import Watcher
 
 sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding="utf-8", errors="replace")
@@ -300,6 +305,134 @@ def cmd_heal(args: argparse.Namespace) -> None:
     print(f"\n  恢复日志已写入: {heal_log_path}")
 
 
+def cmd_report(args: argparse.Namespace) -> int:
+    config = load_config(args.config)
+    generator = ReportGenerator(config)
+
+    batch_id = getattr(args, "batch_id", None)
+    include_details = not getattr(args, "brief", False)
+
+    report = generator.generate(
+        batch_id=batch_id,
+        include_details=include_details,
+    )
+
+    print(f"\n{'='*60}")
+    print(f"批次复盘报告")
+    print(f"{'='*60}")
+    print(f"生成时间: {report.generated_at}")
+
+    if report.config_info:
+        print(f"\n{'='*20} 配置信息 {'='*20}")
+        print(f"  intake 目录: {report.config_info['intake_dir']}")
+        print(f"  target 目录: {report.config_info['target_base']}")
+        print(f"  目录结构: {report.config_info['target_structure']}")
+        print(f"  操作方式: {report.config_info['action']}")
+        print(f"  操作者: {report.config_info['operator']}")
+        print(f"  日志目录: {report.config_info['logging_dir']}")
+
+    if report.errors:
+        print(f"\n{'='*20} 错误 {'='*20}")
+        for e in report.errors:
+            print(f"  ✗ {e}")
+
+    if report.warnings:
+        print(f"\n{'='*20} 警告 {'='*20}")
+        for w in report.warnings:
+            print(f"  ⚠ {w}")
+
+    if report.batches:
+        print(f"\n{'='*20} 批次汇总 ({len(report.batches)} 个) {'='*20}")
+        for b in report.batches:
+            status_icon = {
+                "completed": "✓",
+                "partial_failed": "⚠",
+                "rolled_back": "↺",
+                "open": "○",
+            }.get(b.status, "?")
+
+            print(f"\n  [{status_icon}] 批次 {b.batch_id}")
+            print(f"      状态: {b.status}")
+            print(f"      创建时间: {b.created_at}")
+            print(f"      操作者: {b.operator}")
+            print(f"      总计: {b.total}, 成功: {b.succeeded}, 失败: {b.failed}")
+            if b.target_dirs:
+                print(f"      目标目录: {', '.join(b.target_dirs)}")
+
+            if include_details and b.success_files:
+                print(f"      成功文件 ({len(b.success_files)}):")
+                for sf in b.success_files[:5]:
+                    print(f"        ✓ {sf['filename']} -> {sf['destination']}")
+                if len(b.success_files) > 5:
+                    print(f"        ... 还有 {len(b.success_files) - 5} 个")
+
+            if include_details and b.failed_files:
+                print(f"      失败文件 ({len(b.failed_files)}):")
+                for ff in b.failed_files:
+                    retry_tag = f" (已重试 {ff['retry_count']} 次)" if ff["retry_count"] > 0 else ""
+                    in_eq_tag = " [在错误队列]" if ff["in_error_queue"] else ""
+                    print(f"        ✗ {ff['filename']}: {ff['error']}{retry_tag}{in_eq_tag}")
+    else:
+        print(f"\n  无批次数据")
+
+    if report.conflicts:
+        print(f"\n{'='*20} 文件名冲突 ({len(report.conflicts)} 个) {'='*20}")
+        for c in report.conflicts:
+            tags = []
+            if c.in_queue:
+                tags.append("在队列中")
+            if c.in_error_queue:
+                tags.append("在错误队列中")
+            tag_str = f" [{', '.join(tags)}]" if tags else ""
+            print(f"  ! {c.filename}")
+            print(f"      intake: {c.intake_path}")
+            print(f"      target: {c.target_path}{tag_str}")
+
+    if report.retryable_items:
+        print(f"\n{'='*20} 可重试项 ({len(report.retryable_items)} 个) {'='*20}")
+        for r in report.retryable_items:
+            progress = f" ({r.retry_count}/{r.max_retries})"
+            batch_tag = f" [批次 {r.batch_id}]" if r.batch_id else ""
+            print(f"  ↻ {r.filename}: {r.error}{progress}{batch_tag}")
+
+    hc = report.healthcheck_summary
+    print(f"\n{'='*20} 最近健康检查摘要 {'='*20}")
+    if hc.last_check_time:
+        print(f"  上次检查时间: {hc.last_check_time}")
+    else:
+        print(f"  上次检查时间: 未执行过")
+    print(f"  问题总数: {hc.total_findings}")
+    if hc.total_findings > 0:
+        print(f"    严重: {hc.critical_count}, 警告: {hc.warning_count}, 信息: {hc.info_count}")
+        print(f"    可自动修复: {hc.fixable_count}")
+
+    output_path = args.output
+    fmt = args.format
+    if output_path or fmt:
+        fmt = fmt or "json"
+        if not output_path:
+            output_path = f"batch_report.{fmt}"
+
+        if fmt == "json":
+            export_report_json(report, output_path)
+            print(f"\n  报告已导出 JSON: {output_path}")
+        elif fmt == "csv":
+            exported = export_report_csv(report, output_path)
+            print(f"\n  报告已导出 CSV ({len(exported)} 个文件):")
+            for p in exported:
+                print(f"    {p}")
+
+    print(f"\n{'='*60}")
+    if report.exit_code == 0:
+        print("✓ 报告生成成功，无异常")
+    elif report.exit_code == 1:
+        print("⚠ 报告生成成功，但存在警告")
+    else:
+        print("✗ 报告生成存在错误")
+
+    return report.exit_code
+
+
 def _print_result(result: dict) -> None:
     for key, value in result.items():
         if key == "details":
@@ -384,6 +517,26 @@ def build_parser() -> argparse.ArgumentParser:
         help="只修复指定指纹的问题,逗号分隔",
     )
 
+    p_report = sub.add_parser("report", help="批次复盘报告:汇总批次处理情况")
+    p_report.add_argument(
+        "--batch-id",
+        default=None,
+        help="指定批次 ID 过滤（默认显示所有批次）",
+    )
+    p_report.add_argument(
+        "--brief",
+        action="store_true",
+        default=False,
+        help="简洁模式，不显示文件详情",
+    )
+    p_report.add_argument(
+        "--format",
+        choices=["json", "csv"],
+        default=None,
+        help="导出格式 (不指定则不导出文件)",
+    )
+    p_report.add_argument("--output", help="报告导出路径")
+
     return parser
 
 
@@ -406,11 +559,14 @@ def main(argv: list[str] | None = None) -> int:
         "reload": cmd_reload,
         "healthcheck": cmd_healthcheck,
         "heal": cmd_heal,
+        "report": cmd_report,
     }
 
     handler = dispatch.get(args.command)
     if handler:
-        handler(args)
+        result = handler(args)
+        if isinstance(result, int):
+            return result
         return 0
     else:
         parser.print_help()

@@ -1,0 +1,29 @@
+{
+  "batches": [],
+  "conflicts": [],
+  "retryable_items": [],
+  "healthcheck_summary": {
+    "last_check_time": null,
+    "total_findings": 0,
+    "critical_count": 0,
+    "warning_count": 0,
+    "info_count": 0,
+    "fixable_count": 0
+  },
+  "config_info": {
+    "intake_dir": "D:\\workSpace\\AI__SPACE\\zzz-00030\\test_report_run\\intake",
+    "target_base": "D:\\workSpace\\AI__SPACE\\zzz-00030\\test_report_run\\target",
+    "target_structure": "{case_number}",
+    "operator": "empty_test",
+    "action": "move",
+    "logging_dir": "D:\\workSpace\\AI__SPACE\\zzz-00030\\test_report_run\\empty_data"
+  },
+  "warnings": [
+    "batch_history.json 为空，无历史批次记录",
+    "action_log.jsonl 为空或不存在",
+    "queue.json 为空或不存在",
+    "batch_history.json 为空或不存在"
+  ],
+  "errors": [],
+  "generated_at": "2026-06-12T07:41:18.197573"
+}
