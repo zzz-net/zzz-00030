@@ -60,6 +60,7 @@ class BatchManager:
 
         ok_files = [f for f, r in zip(files, results) if r.ok]
         fail_files = [f for f, r in zip(files, results) if not r.ok]
+        precheck_fail_count = len(fail_files)
 
         for sf, pr in zip(files, results):
             self.processing_queue.enqueue(
@@ -68,8 +69,11 @@ class BatchManager:
                 filename=sf.filename,
             )
 
+        precheck_error_paths: list[str] = []
         for sf, pr in zip(files, results):
             if not pr.ok:
+                self.processing_queue.mark_failed(sf.path)
+                precheck_error_paths.append(sf.path)
                 self.error_queue.add(
                     ErrorItem(
                         path=sf.path,
@@ -84,7 +88,8 @@ class BatchManager:
             return {
                 "status": "all_precheck_failed",
                 "total": len(files),
-                "failed": len(fail_files),
+                "succeeded": 0,
+                "failed": precheck_fail_count,
             }
 
         batch_limit = max_files or self.config.batch.max_size
@@ -93,14 +98,14 @@ class BatchManager:
         batch = BatchRecord(
             operator=self.config.operator,
             status=BatchStatus.OPEN,
-            total=len(ok_files),
+            total=len(files),
         )
 
         succeeded = 0
-        failed = 0
+        exec_failed = 0
         action_ids: list[str] = []
         stop_threshold = self.config.batch.stop_on_failure_ratio
-        error_file_paths: list[str] = []
+        error_file_paths: list[str] = list(precheck_error_paths)
 
         for sf in ok_files:
             success, err = execute_file(sf, self.config)
@@ -119,7 +124,7 @@ class BatchManager:
                 action_ids.append(record.action_id)
                 self.processing_queue.mark_done(sf.path)
             else:
-                failed += 1
+                exec_failed += 1
                 error_file_paths.append(sf.path)
                 self.processing_queue.mark_failed(sf.path)
                 self.error_queue.add(
@@ -132,20 +137,21 @@ class BatchManager:
                     )
                 )
 
-                if succeeded + failed > 0:
-                    ratio = failed / (succeeded + failed)
+                if succeeded + exec_failed > 0:
+                    ratio = exec_failed / (succeeded + exec_failed)
                     if ratio >= stop_threshold:
                         batch.status = BatchStatus.PARTIAL_FAILED
                         break
 
+        total_failed = precheck_fail_count + exec_failed
         if batch.status != BatchStatus.PARTIAL_FAILED:
-            if failed > 0:
+            if total_failed > 0:
                 batch.status = BatchStatus.PARTIAL_FAILED
             else:
                 batch.status = BatchStatus.COMPLETED
 
         batch.succeeded = succeeded
-        batch.failed = failed
+        batch.failed = total_failed
         batch.action_ids = action_ids
         batch.error_file_paths = error_file_paths
 
@@ -157,7 +163,9 @@ class BatchManager:
             "batch_id": batch.batch_id,
             "total": batch.total,
             "succeeded": succeeded,
-            "failed": failed,
+            "failed": total_failed,
+            "precheck_failed": precheck_fail_count,
+            "exec_failed": exec_failed,
         }
 
     def retry_failed(self, limit: int | None = None) -> dict:

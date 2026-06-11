@@ -1,0 +1,24 @@
+[
+  {
+    "action_id": "f590549e6c8b",
+    "batch_id": "cd1072b4",
+    "source": "D:\\workSpace\\AI__SPACE\\zzz-00030\\review_tmp\\intake\\2024-Z001-001.pdf",
+    "destination": "D:\\workSpace\\AI__SPACE\\zzz-00030\\review_tmp\\target\\2024-Z001\\2024-Z001-001.pdf",
+    "action_type": "move",
+    "timestamp": "2026-06-12T02:06:48.572439",
+    "operator": "reviewer",
+    "rolled_back": true,
+    "case_number": "2024-Z001"
+  },
+  {
+    "action_id": "2ec0623994fe",
+    "batch_id": "",
+    "source": "D:\\workSpace\\AI__SPACE\\zzz-00030\\review_tmp\\intake\\2024-Z001-002.pdf",
+    "destination": "D:\\workSpace\\AI__SPACE\\zzz-00030\\review_tmp\\target\\2024-Z001\\2024-Z001-002.pdf",
+    "action_type": "move",
+    "timestamp": "2026-06-12T02:07:04.184503",
+    "operator": "reviewer",
+    "rolled_back": false,
+    "case_number": "2024-Z001"
+  }
+]

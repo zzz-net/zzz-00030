@@ -1,0 +1,34 @@
+[
+  {
+    "filename": "2024-Z001-001.pdf",
+    "path": "D:\\workSpace\\AI__SPACE\\zzz-00030\\review_tmp\\intake\\2024-Z001-001.pdf",
+    "ok": true,
+    "errors": [],
+    "case_number": "2024-Z001",
+    "target_dir": "D:\\workSpace\\AI__SPACE\\zzz-00030\\review_tmp\\target\\2024-Z001",
+    "target_path": "D:\\workSpace\\AI__SPACE\\zzz-00030\\review_tmp\\target\\2024-Z001\\2024-Z001-001.pdf"
+  },
+  {
+    "filename": "2024-Z001-002.pdf",
+    "path": "D:\\workSpace\\AI__SPACE\\zzz-00030\\review_tmp\\intake\\2024-Z001-002.pdf",
+    "ok": false,
+    "errors": [
+      "目标路径已被占用: D:\\workSpace\\AI__SPACE\\zzz-00030\\review_tmp\\target\\2024-Z001\\2024-Z001-002.pdf"
+    ],
+    "case_number": "2024-Z001",
+    "target_dir": "D:\\workSpace\\AI__SPACE\\zzz-00030\\review_tmp\\target\\2024-Z001",
+    "target_path": "D:\\workSpace\\AI__SPACE\\zzz-00030\\review_tmp\\target\\2024-Z001\\2024-Z001-002.pdf"
+  },
+  {
+    "filename": "bad-name#.pdf",
+    "path": "D:\\workSpace\\AI__SPACE\\zzz-00030\\review_tmp\\intake\\bad-name#.pdf",
+    "ok": false,
+    "errors": [
+      "文件名包含非法字符",
+      "无法从文件名解析案卷号"
+    ],
+    "case_number": null,
+    "target_dir": null,
+    "target_path": null
+  }
+]

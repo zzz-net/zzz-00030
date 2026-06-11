@@ -1,0 +1,13 @@
+[
+  {
+    "path": "D:\\workSpace\\AI__SPACE\\zzz-00030\\test_run\\intake\\bad file#name.pdf",
+    "filename": "bad file#name.pdf",
+    "case_number": null,
+    "error": "文件名包含非法字符; 无法从文件名解析案卷号",
+    "retry_count": 1,
+    "max_retries": 3,
+    "added_at": "2026-06-12T02:05:12.995362",
+    "last_retry_at": "2026-06-12T02:05:13.003174",
+    "batch_id": null
+  }
+]

@@ -1,0 +1,18 @@
+[
+  {
+    "batch_id": "cd1072b4",
+    "created_at": "2026-06-12T02:06:48.572343",
+    "operator": "reviewer",
+    "status": "rolled_back",
+    "total": 3,
+    "succeeded": 1,
+    "failed": 2,
+    "action_ids": [
+      "f590549e6c8b"
+    ],
+    "error_file_paths": [
+      "D:\\workSpace\\AI__SPACE\\zzz-00030\\review_tmp\\intake\\2024-Z001-002.pdf",
+      "D:\\workSpace\\AI__SPACE\\zzz-00030\\review_tmp\\intake\\bad-name#.pdf"
+    ]
+  }
+]

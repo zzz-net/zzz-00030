@@ -1,0 +1,13 @@
+{
+  "status": "done",
+  "batch_id": "cd1072b4",
+  "rolled_back_ok": 1,
+  "rolled_back_fail": 0,
+  "details": [
+    {
+      "ok": true,
+      "action_id": "f590549e6c8b",
+      "detail": "回滚 MOVE: D:\\workSpace\\AI__SPACE\\zzz-00030\\review_tmp\\target\\2024-Z001\\2024-Z001-001.pdf -> D:\\workSpace\\AI__SPACE\\zzz-00030\\review_tmp\\intake\\2024-Z001-001.pdf"
+    }
+  ]
+}
