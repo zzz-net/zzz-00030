@@ -1,2 +1,2 @@
 ﻿batch_id,status,created_at,operator,total,succeeded,failed,target_dirs
-52cb0ecc,partial_failed,2026-06-12T14:07:54.422696,report_test_op,5,2,3,D:\workSpace\AI__SPACE\zzz-00030\test_report_run\target\2024-A001; D:\workSpace\AI__SPACE\zzz-00030\test_report_run\target\2024-B002
+4ea6f865,partial_failed,2026-06-12T15:45:50.252262,report_test_op,5,2,3,D:\workSpace\AI__SPACE\zzz-00030\test_report_run\target\2024-A001; D:\workSpace\AI__SPACE\zzz-00030\test_report_run\target\2024-B002

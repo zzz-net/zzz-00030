@@ -178,12 +178,10 @@ class ReportGenerator:
                 case_number = m.group(1)
 
             if case_number:
-                target_dir = os.path.join(
-                    target_base,
-                    self.config.rules.target_structure.replace(
-                        "{case_number}", case_number
-                    ),
-                )
+                structure = self.config.rules.target_structure
+                subdir = structure.replace("{case_number}", case_number)
+                subdir_parts = subdir.replace("\\", "/").split("/")
+                target_dir = os.path.join(target_base, *subdir_parts)
                 target_path = os.path.join(target_dir, filename)
                 if os.path.exists(target_path):
                     conflicts.append(ConflictInfo(

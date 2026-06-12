@@ -6,8 +6,8 @@
     "error": "无法从文件名解析案卷号",
     "retry_count": 1,
     "max_retries": 3,
-    "added_at": "2026-06-12T12:03:43.055634",
-    "last_retry_at": "2026-06-12T12:03:43.813452",
-    "batch_id": "746b6d7c"
+    "added_at": "2026-06-12T15:46:20.094471",
+    "last_retry_at": "2026-06-12T15:46:20.850904",
+    "batch_id": "ded29d9d"
   }
 ]

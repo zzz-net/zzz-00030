@@ -31,18 +31,27 @@ from scan_sorter.report import (
     export_report_json,
     export_report_csv,
 )
+from scan_sorter.retry_manager import (
+    RetryManager,
+    RetryStatus,
+    SkipReason,
+    export_retry_plan_json,
+    export_retry_plan_csv,
+    export_retry_result_json,
+    export_retry_result_csv,
+)
 from scan_sorter.watcher import Watcher
 
 sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding="utf-8", errors="replace")
 sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding="utf-8", errors="replace")
 
 
-def export_plan_json(plan, output_path: str) -> None:
+def export_dryrun_plan_json(plan, output_path: str) -> None:
     with open(output_path, "w", encoding="utf-8") as f:
         json.dump(plan.to_dict(), f, ensure_ascii=False, indent=2)
 
 
-def export_plan_csv(plan, output_path: str) -> None:
+def export_dryrun_plan_csv(plan, output_path: str) -> None:
     fieldnames = [
         "filename", "path", "case_number", "target_dir", "target_path",
         "action", "will_succeed", "action_type",
@@ -116,10 +125,10 @@ def cmd_plan(args: argparse.Namespace) -> None:
         if not output_path:
             output_path = f"process_plan.{fmt}"
         if fmt == "json":
-            export_plan_json(plan, output_path)
+            export_dryrun_plan_json(plan, output_path)
             print(f"\n  计划已导出 JSON: {output_path}")
         elif fmt == "csv":
-            export_plan_csv(plan, output_path)
+            export_dryrun_plan_csv(plan, output_path)
             print(f"\n  计划已导出 CSV: {output_path}")
 
 
@@ -181,6 +190,141 @@ def cmd_retry(args: argparse.Namespace) -> None:
 
     if args.json:
         _write_output(result, args.json, "重试结果")
+
+
+def _skip_reason_label(reason: SkipReason) -> str:
+    return {
+        SkipReason.SOURCE_MISSING: "源文件丢失",
+        SkipReason.TARGET_EXISTS: "目标已存在",
+        SkipReason.IN_PROCESSING_QUEUE: "在处理队列中",
+        SkipReason.DUPLICATE_IN_ERROR_QUEUE: "错误队列重复",
+        SkipReason.MAX_RETRIES_EXCEEDED: "超最大重试次数",
+        SkipReason.PARSE_FAILED: "解析失败",
+        SkipReason.PRECHECK_FAILED: "预检失败",
+    }.get(reason, reason.value)
+
+
+def cmd_retry_plan(args: argparse.Namespace) -> None:
+    config = load_config(args.config)
+    mgr = BatchManager(config)
+    plan = mgr.build_retry_plan(
+        limit=args.limit,
+        include_skipped=not getattr(args, "retryable_only", False),
+    )
+
+    print(f"\n{'='*60}")
+    print(f"重试预检计划")
+    print(f"{'='*60}")
+    print(f"  总计: {plan.total}")
+    print(f"  可重试: {plan.retryable}")
+    print(f"  跳过: {plan.skipped}")
+    print(f"{'='*60}")
+
+    if plan.total == 0:
+        print("  错误队列为空，无待处理项")
+    else:
+        if plan.retryable_items:
+            print(f"\n  [可重试] ({len(plan.retryable_items)} 项)")
+            for item in plan.retryable_items:
+                print(f"    ✓ {item.filename}")
+                if item.original_error:
+                    print(f"       原始错误: {item.original_error}")
+                if item.case_number:
+                    print(f"       案卷号: {item.case_number}")
+                if item.new_target_path:
+                    print(f"       新目标路径: {item.new_target_path}")
+                print(f"       预计动作: {item.expected_action}")
+                print(f"       重试进度: {item.retry_count}/{item.max_retries}")
+                if item.original_batch_id:
+                    print(f"       原始批次: {item.original_batch_id}")
+
+        if plan.skipped_items and not getattr(args, "retryable_only", False):
+            print(f"\n  [跳过] ({len(plan.skipped_items)} 项)")
+            for item in plan.skipped_items:
+                reason_label = _skip_reason_label(item.skip_reason) if item.skip_reason else "未知原因"
+                print(f"    ✗ {item.filename}  [{reason_label}]")
+                if item.original_error:
+                    print(f"       原始错误: {item.original_error}")
+                if item.skip_detail:
+                    print(f"       跳过原因: {item.skip_detail}")
+                if item.new_target_path:
+                    print(f"       新目标路径: {item.new_target_path}")
+                if item.original_batch_id:
+                    print(f"       原始批次: {item.original_batch_id}")
+                tags = []
+                if item.source_missing:
+                    tags.append("源文件丢失")
+                if item.target_exists:
+                    tags.append("目标已存在")
+                if item.in_processing_queue:
+                    tags.append("处理队列中")
+                if item.duplicate_in_error_queue:
+                    tags.append("错误队列重复")
+                if tags:
+                    print(f"       标记: [{', '.join(tags)}]")
+
+    fmt = args.format
+    output_path = args.output
+    if fmt or output_path:
+        fmt = fmt or "json"
+        if not output_path:
+            output_path = f"retry_plan.{fmt}"
+        if fmt == "json":
+            export_retry_plan_json(plan, output_path)
+            print(f"\n  计划已导出 JSON: {output_path}")
+        elif fmt == "csv":
+            export_retry_plan_csv(plan, output_path)
+            print(f"\n  计划已导出 CSV: {output_path}")
+
+
+def cmd_retry_execute(args: argparse.Namespace) -> None:
+    config = load_config(args.config)
+    mgr = BatchManager(config)
+
+    paths = None
+    if args.paths:
+        paths = [p.strip() for p in args.paths.split(",")]
+
+    result = mgr.execute_retry(
+        paths=paths,
+        limit=args.limit,
+    )
+
+    print(f"\n{'='*60}")
+    print(f"重试执行结果")
+    print(f"{'='*60}")
+    print(f"  批次 ID: {result.batch_id}")
+    print(f"  总计执行: {result.total}")
+    print(f"  成功: {result.succeeded}")
+    print(f"  失败: {result.failed}")
+    print(f"  预检跳过: {result.skipped}")
+    print(f"  执行时间: {result.timestamp}")
+    print(f"{'='*60}")
+
+    if result.total == 0:
+        print("  无可执行的重试项")
+    else:
+        for item in result.items:
+            if item.status == RetryStatus.SUCCESS:
+                print(f"    ✓ [成功] {item.filename}")
+                print(f"       动作: {item.action_type} {item.source} -> {item.destination}")
+                print(f"       操作 ID: {item.action_id}")
+            else:
+                print(f"    ✗ [失败] {item.filename}")
+                print(f"       错误: {item.error}")
+
+    fmt = args.format
+    output_path = args.output
+    if fmt or output_path:
+        fmt = fmt or "json"
+        if not output_path:
+            output_path = f"retry_result.{fmt}"
+        if fmt == "json":
+            export_retry_result_json(result, output_path)
+            print(f"\n  结果已导出 JSON: {output_path}")
+        elif fmt == "csv":
+            export_retry_result_csv(result, output_path)
+            print(f"\n  结果已导出 CSV: {output_path}")
 
 
 def cmd_rollback(args: argparse.Namespace) -> None:
@@ -809,9 +953,39 @@ def build_parser() -> argparse.ArgumentParser:
     p_process.add_argument("--max-files", type=int, help="最大处理文件数")
     p_process.add_argument("--json", help="处理结果输出 JSON 路径")
 
-    p_retry = sub.add_parser("retry", help="重试错误队列中的失败文件")
+    p_retry = sub.add_parser("retry", help="重试错误队列中的失败文件（简单模式，直接执行）")
     p_retry.add_argument("--limit", type=int, help="最大重试数量")
     p_retry.add_argument("--json", help="重试结果输出 JSON 路径")
+
+    p_retry_plan = sub.add_parser("retry-plan", help="重试预检: 筛出可重试项，显示原始错误、新目标路径、预计动作、跳过原因")
+    p_retry_plan.add_argument("--limit", type=int, help="最大预检数量")
+    p_retry_plan.add_argument(
+        "--retryable-only",
+        action="store_true",
+        default=False,
+        help="只显示可重试项，不显示跳过项",
+    )
+    p_retry_plan.add_argument(
+        "--format",
+        choices=["json", "csv"],
+        default=None,
+        help="导出格式 (不指定则不导出文件)",
+    )
+    p_retry_plan.add_argument("--output", help="计划导出路径")
+
+    p_retry_execute = sub.add_parser("retry-execute", help="重试执行: 按预检结果执行可重试项，生成独立批次")
+    p_retry_execute.add_argument("--limit", type=int, help="最大执行数量")
+    p_retry_execute.add_argument(
+        "--paths",
+        help="只执行指定路径的文件，多个路径用逗号分隔",
+    )
+    p_retry_execute.add_argument(
+        "--format",
+        choices=["json", "csv"],
+        default=None,
+        help="导出格式 (不指定则不导出文件)",
+    )
+    p_retry_execute.add_argument("--output", help="结果导出路径")
 
     p_rollback = sub.add_parser("rollback", help="回滚指定批次")
     p_rollback.add_argument("batch_id", help="要回滚的批次 ID")
@@ -940,6 +1114,8 @@ def main(argv: list[str] | None = None) -> int:
         "plan": cmd_plan,
         "process": cmd_process,
         "retry": cmd_retry,
+        "retry-plan": cmd_retry_plan,
+        "retry-execute": cmd_retry_execute,
         "rollback": cmd_rollback,
         "watch": cmd_watch,
         "status": cmd_status,

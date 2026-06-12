@@ -1,0 +1,46 @@
+[
+  {
+    "path": "D:\\workSpace\\AI__SPACE\\zzz-00030\\_reviewer_test\\intake\\2024-A002-001.pdf",
+    "filename": "2024-A002-001.pdf",
+    "case_number": "2024-A002",
+    "error": "权限不足",
+    "retry_count": 0,
+    "max_retries": 3,
+    "added_at": "2026-06-12T10:00:00",
+    "last_retry_at": null,
+    "batch_id": "batch_001"
+  },
+  {
+    "path": "D:\\workSpace\\AI__SPACE\\zzz-00030\\_reviewer_test\\intake\\2024-B003-001.jpg",
+    "filename": "2024-B003-001.jpg",
+    "case_number": "2024-B003",
+    "error": "网络超时",
+    "retry_count": 3,
+    "max_retries": 3,
+    "added_at": "2026-06-12T10:00:00",
+    "last_retry_at": "2026-06-12T11:00:00",
+    "batch_id": "batch_002"
+  },
+  {
+    "path": "D:\\workSpace\\AI__SPACE\\zzz-00030\\_reviewer_test\\intake\\2024-D005-001.pdf",
+    "filename": "2024-D005-001.pdf",
+    "case_number": "2024-D005",
+    "error": "文件被占用",
+    "retry_count": 1,
+    "max_retries": 3,
+    "added_at": "2026-06-12T10:00:00",
+    "last_retry_at": "2026-06-12T11:00:00",
+    "batch_id": "batch_004"
+  },
+  {
+    "path": "D:\\workSpace\\AI__SPACE\\zzz-00030\\_reviewer_test\\intake\\bad $name#.pdf",
+    "filename": "bad $name#.pdf",
+    "case_number": null,
+    "error": "文件名不合法",
+    "retry_count": 0,
+    "max_retries": 3,
+    "added_at": "2026-06-12T10:00:00",
+    "last_retry_at": null,
+    "batch_id": null
+  }
+]

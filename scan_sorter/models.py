@@ -268,3 +268,145 @@ class DryRunResult:
             "warnings": self.warnings,
             "items": [item.to_dict() for item in self.items],
         }
+
+
+class SkipReason(enum.Enum):
+    SOURCE_MISSING = "source_missing"
+    TARGET_EXISTS = "target_exists"
+    IN_PROCESSING_QUEUE = "in_processing_queue"
+    DUPLICATE_IN_ERROR_QUEUE = "duplicate_in_error_queue"
+    MAX_RETRIES_EXCEEDED = "max_retries_exceeded"
+    PARSE_FAILED = "parse_failed"
+    PRECHECK_FAILED = "precheck_failed"
+
+
+class RetryStatus(enum.Enum):
+    RETRYABLE = "retryable"
+    SKIPPED = "skipped"
+    PENDING = "pending"
+    SUCCESS = "success"
+    FAILED = "failed"
+
+
+@dataclass
+class RetryPlanItem:
+    path: str
+    filename: str
+    case_number: Optional[str] = None
+    original_error: str = ""
+    original_batch_id: Optional[str] = None
+    retry_count: int = 0
+    max_retries: int = 3
+    added_at: str = ""
+    last_retry_at: Optional[str] = None
+    new_target_dir: Optional[str] = None
+    new_target_path: Optional[str] = None
+    expected_action: str = ""
+    status: RetryStatus = RetryStatus.PENDING
+    skip_reason: Optional[SkipReason] = None
+    skip_detail: str = ""
+    parse_errors: list = field(default_factory=list)
+    precheck_errors: list = field(default_factory=list)
+    target_exists: bool = False
+    source_missing: bool = False
+    in_processing_queue: bool = False
+    duplicate_in_error_queue: bool = False
+    action_type: str = ""
+
+    def to_dict(self) -> dict:
+        return {
+            "path": self.path,
+            "filename": self.filename,
+            "case_number": self.case_number,
+            "original_error": self.original_error,
+            "original_batch_id": self.original_batch_id,
+            "retry_count": self.retry_count,
+            "max_retries": self.max_retries,
+            "added_at": self.added_at,
+            "last_retry_at": self.last_retry_at,
+            "new_target_dir": self.new_target_dir,
+            "new_target_path": self.new_target_path,
+            "expected_action": self.expected_action,
+            "status": self.status.value,
+            "skip_reason": self.skip_reason.value if self.skip_reason else None,
+            "skip_detail": self.skip_detail,
+            "parse_errors": self.parse_errors,
+            "precheck_errors": self.precheck_errors,
+            "target_exists": self.target_exists,
+            "source_missing": self.source_missing,
+            "in_processing_queue": self.in_processing_queue,
+            "duplicate_in_error_queue": self.duplicate_in_error_queue,
+            "action_type": self.action_type,
+        }
+
+
+@dataclass
+class RetryPlanResult:
+    items: list = field(default_factory=list)
+    total: int = 0
+    retryable: int = 0
+    skipped: int = 0
+    retryable_items: list = field(default_factory=list)
+    skipped_items: list = field(default_factory=list)
+
+    def to_dict(self) -> dict:
+        return {
+            "total": self.total,
+            "retryable": self.retryable,
+            "skipped": self.skipped,
+            "retryable_items": [item.to_dict() for item in self.retryable_items],
+            "skipped_items": [item.to_dict() for item in self.skipped_items],
+            "items": [item.to_dict() for item in self.items],
+        }
+
+
+@dataclass
+class RetryExecutionItem:
+    path: str
+    filename: str
+    case_number: Optional[str] = None
+    status: RetryStatus = RetryStatus.PENDING
+    error: str = ""
+    action_id: str = ""
+    batch_id: str = ""
+    source: str = ""
+    destination: str = ""
+    action_type: str = ""
+    timestamp: str = ""
+
+    def to_dict(self) -> dict:
+        return {
+            "path": self.path,
+            "filename": self.filename,
+            "case_number": self.case_number,
+            "status": self.status.value,
+            "error": self.error,
+            "action_id": self.action_id,
+            "batch_id": self.batch_id,
+            "source": self.source,
+            "destination": self.destination,
+            "action_type": self.action_type,
+            "timestamp": self.timestamp,
+        }
+
+
+@dataclass
+class RetryExecutionResult:
+    items: list = field(default_factory=list)
+    total: int = 0
+    succeeded: int = 0
+    failed: int = 0
+    skipped: int = 0
+    batch_id: str = ""
+    timestamp: str = field(default_factory=lambda: datetime.now().isoformat())
+
+    def to_dict(self) -> dict:
+        return {
+            "total": self.total,
+            "succeeded": self.succeeded,
+            "failed": self.failed,
+            "skipped": self.skipped,
+            "batch_id": self.batch_id,
+            "timestamp": self.timestamp,
+            "items": [item.to_dict() for item in self.items],
+        }

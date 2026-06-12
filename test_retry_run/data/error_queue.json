@@ -1,0 +1,13 @@
+[
+  {
+    "path": "D:\\workSpace\\AI__SPACE\\zzz-00030\\test_retry_run\\intake\\2026-X001-001.pdf",
+    "filename": "2026-X001-001.pdf",
+    "case_number": "2026-X001",
+    "error": "临时错误",
+    "retry_count": 0,
+    "max_retries": 3,
+    "added_at": "2026-06-12T16:16:44.284544",
+    "last_retry_at": null,
+    "batch_id": null
+  }
+]

@@ -21,7 +21,8 @@ def parse_target_path(scan_file: ScanFile, config: AppConfig) -> Optional[str]:
         return None
     structure = config.rules.target_structure
     subdir = structure.replace("{case_number}", scan_file.case_number)
-    target_dir = os.path.join(os.path.abspath(config.target_base), subdir)
+    subdir_parts = subdir.replace("\\", "/").split("/")
+    target_dir = os.path.join(os.path.abspath(config.target_base), *subdir_parts)
     target_path = os.path.join(target_dir, scan_file.filename)
     return target_path
 

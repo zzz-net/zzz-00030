@@ -15,6 +15,8 @@ from scan_sorter.models import (
     FileStatus,
     PlanAction,
     PrecheckResult,
+    RetryExecutionResult,
+    RetryPlanResult,
     ScanFile,
 )
 from scan_sorter.action_logger import ActionLogger
@@ -368,3 +370,29 @@ class BatchManager:
 
     def export_action_log(self) -> list[dict]:
         return self.action_logger.export_dicts()
+
+    def build_retry_plan(
+        self,
+        limit: Optional[int] = None,
+        include_skipped: bool = True,
+    ) -> RetryPlanResult:
+        from scan_sorter.retry_manager import RetryManager
+        retry_mgr = RetryManager(self.config)
+        return retry_mgr.build_retry_plan(
+            limit=limit,
+            include_skipped=include_skipped,
+        )
+
+    def execute_retry(
+        self,
+        plan: Optional[RetryPlanResult] = None,
+        paths: Optional[list[str]] = None,
+        limit: Optional[int] = None,
+    ) -> RetryExecutionResult:
+        from scan_sorter.retry_manager import RetryManager
+        retry_mgr = RetryManager(self.config)
+        return retry_mgr.execute_retry(
+            plan=plan,
+            paths=paths,
+            limit=limit,
+        )
