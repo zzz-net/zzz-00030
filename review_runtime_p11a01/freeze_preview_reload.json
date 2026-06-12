@@ -1,0 +1,38 @@
+{
+  "total_files": 1,
+  "will_freeze": 0,
+  "will_conflict": 1,
+  "items": [
+    {
+      "item_id": "1280769fae84",
+      "file": {
+        "path": "D:\\workSpace\\AI__SPACE\\zzz-00030\\review_runtime_p11a01\\target\\2024-A002\\2024-A002-001.pdf",
+        "filename": "2024-A002-001.pdf",
+        "case_number": "2024-A002",
+        "batch_id": "BATCH-NEW-001",
+        "archived_at": "2026-06-10T20:38:43.731250+00:00",
+        "size": 13,
+        "sha256": "070fde78f3f794348b5196d99afe4ef30e2239bc178a5c19ad1868588dabef71",
+        "action_id": "e663a31feab0"
+      },
+      "freeze_status": "conflict",
+      "conflicts": [
+        {
+          "category": "max_count_exceeded",
+          "detail": "超出最大封存数量限制 (最大1个)",
+          "extra": {
+            "max_count": 1,
+            "current_count": 1
+          }
+        }
+      ],
+      "freeze_order_id": "",
+      "frozen_at": "",
+      "released_at": "",
+      "release_order_id": ""
+    }
+  ],
+  "reason": "reloaded-reason",
+  "valid_days": 3,
+  "expires_at": "2026-06-15T12:40:01.541705+00:00"
+}

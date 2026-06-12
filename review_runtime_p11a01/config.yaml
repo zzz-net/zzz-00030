@@ -1,0 +1,43 @@
+intake_dir: D:\workSpace\AI__SPACE\zzz-00030\review_runtime_p11a01\intake
+target_base: D:\workSpace\AI__SPACE\zzz-00030\review_runtime_p11a01\target
+operator: global-review-operator
+rules:
+  case_number_pattern: (\d{4}-[A-Z]\d{3})
+  file_pattern: (\d{4}-[A-Z]\d{3}-\d{3})\.(pdf|jpg|jpeg|png|tiff|bmp)$
+  allowed_extensions:
+  - .pdf
+  - .jpg
+  - .jpeg
+  - .png
+  - .tiff
+  - .bmp
+  illegal_name_patterns: []
+  target_structure: '{case_number}'
+  action: move
+batch:
+  max_size: 50
+  stop_on_failure_ratio: 0.5
+logging:
+  dir: D:\workSpace\AI__SPACE\zzz-00030\review_runtime_p11a01\data
+  action_log: action_log.jsonl
+  queue_file: queue.json
+  error_queue_file: error_queue.json
+  batch_history_file: batch_history.json
+watch:
+  poll_interval: 5
+retention:
+  enabled: true
+  state_file: retention_state.json
+  log_file: retention_log.jsonl
+  default_retention_days: 7
+  check_write_permission: true
+  rules: []
+freeze:
+  enabled: true
+  state_file: freeze_state.json
+  log_file: freeze_log.jsonl
+  default_reason: reloaded-reason
+  default_operator: freeze-config-operator
+  default_valid_days: 3
+  max_frozen_files: 1
+  check_write_permission: true

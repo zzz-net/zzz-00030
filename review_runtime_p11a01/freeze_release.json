@@ -1,0 +1,42 @@
+{
+  "order_id": "FRZ-F75388F37C",
+  "order_type": "release",
+  "created_at": "2026-06-12T20:41:18.390695",
+  "operator": "global-review-operator",
+  "reason": "解封封存单 FRZ-7F2C7E9F14",
+  "valid_days": 0,
+  "expires_at": "",
+  "config_snapshot": {
+    "default_reason": "reloaded-reason",
+    "default_valid_days": 3,
+    "max_frozen_files": 1,
+    "target_base": "D:\\workSpace\\AI__SPACE\\zzz-00030\\review_runtime_p11a01\\target"
+  },
+  "items": [
+    {
+      "item_id": "d02f2bd27f47",
+      "file": {
+        "path": "D:\\workSpace\\AI__SPACE\\zzz-00030\\review_runtime_p11a01\\target\\2024-A001\\2024-A001-001.pdf",
+        "filename": "2024-A001-001.pdf",
+        "case_number": "2024-A001",
+        "batch_id": "BATCH-OLD-001",
+        "archived_at": "2026-05-03T20:38:43.731250+00:00",
+        "size": 13,
+        "sha256": "0fa73f2853586223ad41ad633fd8cd77f37d2460ef25b50b69b1e532c4190c41",
+        "action_id": "5a989a59d2b0"
+      },
+      "freeze_status": "released",
+      "conflicts": [],
+      "freeze_order_id": "FRZ-7F2C7E9F14",
+      "frozen_at": "2026-06-12T12:39:33.397723+00:00",
+      "released_at": "2026-06-12T12:41:18.390695+00:00",
+      "release_order_id": "FRZ-F75388F37C"
+    }
+  ],
+  "total_files": 1,
+  "total_frozen": 0,
+  "total_conflicts": 0,
+  "total_released": 1,
+  "notes": "",
+  "status": "completed"
+}

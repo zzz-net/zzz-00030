@@ -1,0 +1,61 @@
+{
+  "retention_runs": [
+    {
+      "run_id": "RET-9D1D0BFC44",
+      "run_type": "generate",
+      "created_at": "2026-06-12T20:40:33.476094",
+      "operator": "global-review-operator",
+      "config_snapshot": {
+        "default_retention_days": 7,
+        "rules": [],
+        "target_base": "D:\\workSpace\\AI__SPACE\\zzz-00030\\review_runtime_p11a01\\target"
+      },
+      "items": [
+        {
+          "item_id": "38dc369b081c",
+          "file": {
+            "path": "D:\\workSpace\\AI__SPACE\\zzz-00030\\review_runtime_p11a01\\target\\2024-A001\\2024-A001-001.pdf",
+            "filename": "2024-A001-001.pdf",
+            "case_number": "2024-A001",
+            "batch_id": "BATCH-OLD-001",
+            "archived_at": "2026-05-03T20:38:43.731250+00:00",
+            "size": 13,
+            "sha256": "0fa73f2853586223ad41ad633fd8cd77f37d2460ef25b50b69b1e532c4190c41",
+            "action_id": "5a989a59d2b0"
+          },
+          "matched_rule_id": "default",
+          "matched_rule_name": "默认规则",
+          "retention_days": 7,
+          "expires_at": "2026-05-10T20:38:43.731250+00:00",
+          "disposal_status": "marked",
+          "defer_reason": "",
+          "defer_until": "",
+          "defer_run_id": "",
+          "conflicts": [],
+          "marked_run_id": "RET-9D1D0BFC44",
+          "marked_at": "2026-06-12T12:40:33.476094+00:00",
+          "undo_run_id": "",
+          "undo_at": ""
+        }
+      ],
+      "total_marked": 1,
+      "total_deferred": 0,
+      "total_conflicts": 0,
+      "total_undone": 0,
+      "notes": ""
+    }
+  ],
+  "config_signature": {
+    "default_retention_days": 7,
+    "rules": [],
+    "target_base": "D:\\workSpace\\AI__SPACE\\zzz-00030\\review_runtime_p11a01\\target"
+  },
+  "mark_index": {
+    "D:\\workSpace\\AI__SPACE\\zzz-00030\\review_runtime_p11a01\\target\\2024-A001\\2024-A001-001.pdf": {
+      "status": "marked",
+      "run_id": "RET-9D1D0BFC44",
+      "item_id": "38dc369b081c",
+      "marked_at": "2026-06-12T12:40:33.476094+00:00"
+    }
+  }
+}

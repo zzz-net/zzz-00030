@@ -1068,3 +1068,164 @@ class RetentionRun:
             total_undone=int(d.get("total_undone", 0)),
             notes=d.get("notes", ""),
         )
+
+
+class FreezeStatus(enum.Enum):
+    ACTIVE = "active"
+    EXPIRED = "expired"
+    RELEASED = "released"
+    CONFLICT = "conflict"
+
+
+class FreezeConflictCategory(enum.Enum):
+    FILE_MISSING = "file_missing"
+    IN_PROCESSING_QUEUE = "in_processing_queue"
+    IN_ERROR_QUEUE = "in_error_queue"
+    DUPLICATE_FREEZE = "duplicate_freeze"
+    CONFIG_CHANGED = "config_changed"
+    NO_WRITE_PERMISSION = "no_write_permission"
+    EXPIRED = "expired"
+    MAX_COUNT_EXCEEDED = "max_count_exceeded"
+
+
+@dataclass
+class FreezeConflictDetail:
+    category: FreezeConflictCategory
+    detail: str = ""
+    extra: dict = field(default_factory=dict)
+
+    def to_dict(self) -> dict:
+        return {
+            "category": self.category.value,
+            "detail": self.detail,
+            "extra": self.extra,
+        }
+
+    @classmethod
+    def from_dict(cls, d: dict) -> "FreezeConflictDetail":
+        return cls(
+            category=FreezeConflictCategory(d.get("category", "file_missing")),
+            detail=d.get("detail", ""),
+            extra=d.get("extra", {}),
+        )
+
+
+@dataclass
+class FreezeItem:
+    item_id: str = field(default_factory=lambda: uuid.uuid4().hex[:12])
+    file: ArchivedFile | None = None
+    freeze_status: FreezeStatus = FreezeStatus.ACTIVE
+    conflicts: list = field(default_factory=list)
+    freeze_order_id: str = ""
+    frozen_at: str = ""
+    released_at: str = ""
+    release_order_id: str = ""
+
+    def to_dict(self) -> dict:
+        return {
+            "item_id": self.item_id,
+            "file": self.file.to_dict() if self.file else None,
+            "freeze_status": self.freeze_status.value,
+            "conflicts": [c.to_dict() for c in self.conflicts],
+            "freeze_order_id": self.freeze_order_id,
+            "frozen_at": self.frozen_at,
+            "released_at": self.released_at,
+            "release_order_id": self.release_order_id,
+        }
+
+    @classmethod
+    def from_dict(cls, d: dict) -> "FreezeItem":
+        file_raw = d.get("file")
+        conflicts_raw = d.get("conflicts", [])
+        conflicts = [FreezeConflictDetail.from_dict(c) for c in conflicts_raw]
+        return cls(
+            item_id=d.get("item_id", uuid.uuid4().hex[:12]),
+            file=ArchivedFile.from_dict(file_raw) if file_raw else None,
+            freeze_status=FreezeStatus(d.get("freeze_status", "active")),
+            conflicts=conflicts,
+            freeze_order_id=d.get("freeze_order_id", ""),
+            frozen_at=d.get("frozen_at", ""),
+            released_at=d.get("released_at", ""),
+            release_order_id=d.get("release_order_id", ""),
+        )
+
+
+@dataclass
+class FreezeOrder:
+    order_id: str = field(default_factory=lambda: "FRZ-" + uuid.uuid4().hex[:10].upper())
+    order_type: str = "freeze"
+    created_at: str = field(default_factory=lambda: datetime.now().isoformat())
+    operator: str = ""
+    reason: str = ""
+    valid_days: int = 30
+    expires_at: str = ""
+    config_snapshot: dict = field(default_factory=dict)
+    items: list = field(default_factory=list)
+    total_files: int = 0
+    total_frozen: int = 0
+    total_conflicts: int = 0
+    total_released: int = 0
+    notes: str = ""
+    status: str = "active"
+
+    def to_dict(self) -> dict:
+        return {
+            "order_id": self.order_id,
+            "order_type": self.order_type,
+            "created_at": self.created_at,
+            "operator": self.operator,
+            "reason": self.reason,
+            "valid_days": self.valid_days,
+            "expires_at": self.expires_at,
+            "config_snapshot": self.config_snapshot,
+            "items": [i.to_dict() for i in self.items],
+            "total_files": self.total_files,
+            "total_frozen": self.total_frozen,
+            "total_conflicts": self.total_conflicts,
+            "total_released": self.total_released,
+            "notes": self.notes,
+            "status": self.status,
+        }
+
+    @classmethod
+    def from_dict(cls, d: dict) -> "FreezeOrder":
+        items_raw = d.get("items", [])
+        return cls(
+            order_id=d.get("order_id", "FRZ-" + uuid.uuid4().hex[:10].upper()),
+            order_type=d.get("order_type", "freeze"),
+            created_at=d.get("created_at", datetime.now().isoformat()),
+            operator=d.get("operator", ""),
+            reason=d.get("reason", ""),
+            valid_days=int(d.get("valid_days", 30)),
+            expires_at=d.get("expires_at", ""),
+            config_snapshot=d.get("config_snapshot", {}),
+            items=[FreezeItem.from_dict(i) for i in items_raw],
+            total_files=int(d.get("total_files", 0)),
+            total_frozen=int(d.get("total_frozen", 0)),
+            total_conflicts=int(d.get("total_conflicts", 0)),
+            total_released=int(d.get("total_released", 0)),
+            notes=d.get("notes", ""),
+            status=d.get("status", "active"),
+        )
+
+
+@dataclass
+class FreezePreviewResult:
+    total_files: int = 0
+    will_freeze: int = 0
+    will_conflict: int = 0
+    items: list = field(default_factory=list)
+    reason: str = ""
+    valid_days: int = 0
+    expires_at: str = ""
+
+    def to_dict(self) -> dict:
+        return {
+            "total_files": self.total_files,
+            "will_freeze": self.will_freeze,
+            "will_conflict": self.will_conflict,
+            "items": [i.to_dict() for i in self.items],
+            "reason": self.reason,
+            "valid_days": self.valid_days,
+            "expires_at": self.expires_at,
+        }

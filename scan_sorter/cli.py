@@ -73,6 +73,15 @@ from scan_sorter.retention_manager import (
     export_history_json,
     export_history_csv,
 )
+from scan_sorter.freeze_manager import (
+    FreezeManager,
+    export_preview_json as export_freeze_preview_json,
+    export_preview_csv as export_freeze_preview_csv,
+    export_order_json as export_freeze_order_json,
+    export_order_csv as export_freeze_order_csv,
+    export_history_json as export_freeze_history_json,
+    export_history_csv as export_freeze_history_csv,
+)
 
 _stdout_wrapped = False
 
@@ -1795,6 +1804,374 @@ def cmd_retention_undo(args: argparse.Namespace) -> int:
     return 0
 
 
+def _freeze_status_label(status) -> str:
+    from scan_sorter.models import FreezeStatus as FS
+    return {
+        FS.ACTIVE: "❄ 已封存",
+        FS.EXPIRED: "⏰ 已过期",
+        FS.RELEASED: "↺ 已解封",
+        FS.CONFLICT: "⚠ 存在冲突",
+    }.get(status, status.value if hasattr(status, 'value') else str(status))
+
+
+def _parse_freeze_filters(args) -> tuple:
+    case_numbers = None
+    if getattr(args, "case_numbers", None):
+        case_numbers = [c.strip() for c in args.case_numbers.split(",") if c.strip()]
+    batch_ids = None
+    if getattr(args, "batch_ids", None):
+        batch_ids = [b.strip() for b in args.batch_ids.split(",") if b.strip()]
+    date_from = None
+    if getattr(args, "date_from", None):
+        from datetime import datetime
+        try:
+            date_from = datetime.fromisoformat(args.date_from)
+        except ValueError:
+            print(f"✗ 日期格式无效: {args.date_from}，请使用 ISO 格式 (如 2024-01-01)")
+            return None, None, None, None
+    date_to = None
+    if getattr(args, "date_to", None):
+        from datetime import datetime
+        try:
+            date_to = datetime.fromisoformat(args.date_to)
+        except ValueError:
+            print(f"✗ 日期格式无效: {args.date_to}，请使用 ISO 格式 (如 2024-12-31)")
+            return None, None, None, None
+    return case_numbers, batch_ids, date_from, date_to
+
+
+def cmd_freeze_preview(args: argparse.Namespace) -> int:
+    config = load_config(args.config)
+    mgr = FreezeManager(config)
+
+    case_numbers, batch_ids, date_from, date_to = _parse_freeze_filters(args)
+    if case_numbers is None and batch_ids is None and (date_from is None and date_to is None):
+        if getattr(args, "date_from", None) or getattr(args, "date_to", None):
+            return 1
+
+    reason = getattr(args, "reason", None)
+    valid_days = getattr(args, "valid_days", None)
+
+    preview = mgr.preview_freeze(
+        case_numbers=case_numbers,
+        batch_ids=batch_ids,
+        date_from=date_from,
+        date_to=date_to,
+        reason=reason,
+        valid_days=valid_days,
+    )
+
+    print(f"\n{'='*60}")
+    print(f"批次封存预览")
+    print(f"{'='*60}")
+    print(f"  目标目录: {os.path.abspath(config.target_base)}")
+    print(f"  封存原因: {preview.reason}")
+    print(f"  有效期: {preview.valid_days} 天")
+    print(f"  到期时间: {preview.expires_at}")
+    print(f"  归档文件总数: {preview.total_files}")
+    print(f"  将被封存: {preview.will_freeze}")
+    print(f"  冲突跳过: {preview.will_conflict}")
+
+    if preview.items:
+        print(f"\n  {'='*20} 文件明细 {'='*20}")
+        for item in preview.items[:50]:
+            fname = item.file.filename if item.file else "(无文件)"
+            case = item.file.case_number if item.file else ""
+            status_label = _freeze_status_label(item.freeze_status)
+            line = f"  {status_label} {fname}"
+            if case:
+                line += f" [案件: {case}]"
+            print(line)
+            if item.conflicts:
+                for c in item.conflicts:
+                    print(f"      ⚠ [{c.category.value}] {c.detail}")
+        if len(preview.items) > 50:
+            print(f"    ... 还有 {len(preview.items) - 50} 个文件")
+
+    fmt = args.format
+    output_path = args.output
+    if fmt or output_path:
+        fmt = fmt or "json"
+        if not output_path:
+            output_path = f"freeze_preview.{fmt}"
+        if fmt == "json":
+            export_freeze_preview_json(preview, output_path)
+            print(f"\n  预览已导出 JSON: {output_path}")
+        elif fmt == "csv":
+            export_freeze_preview_csv(preview, output_path)
+            print(f"\n  预览已导出 CSV: {output_path}")
+    return 0
+
+
+def cmd_freeze_confirm(args: argparse.Namespace) -> int:
+    config = load_config(args.config)
+    mgr = FreezeManager(config)
+
+    case_numbers, batch_ids, date_from, date_to = _parse_freeze_filters(args)
+    if case_numbers is None and batch_ids is None and (date_from is None and date_to is None):
+        if getattr(args, "date_from", None) or getattr(args, "date_to", None):
+            return 1
+
+    reason = getattr(args, "reason", None)
+    valid_days = getattr(args, "valid_days", None)
+    notes = args.notes or ""
+
+    try:
+        order = mgr.confirm_freeze(
+            case_numbers=case_numbers,
+            batch_ids=batch_ids,
+            date_from=date_from,
+            date_to=date_to,
+            reason=reason,
+            valid_days=valid_days,
+            notes=notes,
+        )
+    except PermissionError as e:
+        print(f"✗ 封存失败: {e}")
+        return 1
+
+    print(f"\n{'='*60}")
+    print(f"批次封存确认")
+    print(f"{'='*60}")
+    print(f"  封存单 ID: {order.order_id}")
+    print(f"  操作者: {order.operator}")
+    print(f"  创建时间: {order.created_at}")
+    print(f"  封存原因: {order.reason}")
+    print(f"  有效期: {order.valid_days} 天")
+    print(f"  到期时间: {order.expires_at}")
+    print(f"  已封存: {order.total_frozen}")
+    print(f"  冲突: {order.total_conflicts}")
+    if order.notes:
+        print(f"  备注: {order.notes}")
+
+    for item in order.items:
+        fname = item.file.filename if item.file else "(无文件)"
+        status_label = _freeze_status_label(item.freeze_status)
+        print(f"    {status_label} {fname}")
+        if item.conflicts:
+            for c in item.conflicts:
+                print(f"        ⚠ [{c.category.value}] {c.detail}")
+
+    fmt = args.format
+    output_path = args.output
+    if fmt or output_path:
+        fmt = fmt or "json"
+        if not output_path:
+            output_path = f"freeze_order_{order.order_id}.{fmt}"
+        if fmt == "json":
+            export_freeze_order_json(order, output_path)
+            print(f"\n  封存单已导出 JSON: {output_path}")
+        elif fmt == "csv":
+            export_freeze_order_csv(order, output_path)
+            print(f"\n  封存单已导出 CSV: {output_path}")
+
+    check = mgr.consistency_check()
+    print(f"\n  状态一致性: {'✓ 通过' if check['is_consistent'] else '✗ 存在问题'}")
+    if not check["is_consistent"]:
+        for issue in check["issues"]:
+            print(f"    ⚠ {issue}")
+        return 1
+    return 0
+
+
+def cmd_freeze_history(args: argparse.Namespace) -> int:
+    config = load_config(args.config)
+    mgr = FreezeManager(config)
+
+    order_type = getattr(args, "order_type", None)
+    status = getattr(args, "status", None)
+    limit = getattr(args, "limit", None)
+
+    orders = mgr.list_orders(order_type=order_type, status=status, limit=limit)
+
+    print(f"\n{'='*60}")
+    print(f"封存历史记录")
+    print(f"{'='*60}")
+    print(f"  状态文件: {mgr.state_path}")
+    print(f"  记录总数: {len(orders)}")
+
+    if not orders:
+        print("  (无记录)")
+    else:
+        for order in orders:
+            type_label = "封存" if order.order_type == "freeze" else "解封"
+            print(f"\n  [{order.order_id}] {type_label} - {order.status}")
+            print(f"      时间: {order.created_at}")
+            print(f"      操作者: {order.operator}")
+            print(f"      原因: {order.reason}")
+            if order.order_type == "freeze":
+                print(f"      封存: {order.total_frozen}, 冲突: {order.total_conflicts}")
+            elif order.order_type == "release":
+                print(f"      解封: {order.total_released}, 冲突: {order.total_conflicts}")
+            if order.notes:
+                print(f"      备注: {order.notes}")
+
+    fmt = args.format
+    output_path = args.output
+    if fmt or output_path:
+        fmt = fmt or "json"
+        if not output_path:
+            suffix = order_type or "all"
+            output_path = f"freeze_history_{suffix}.{fmt}"
+        if fmt == "json":
+            export_freeze_history_json(orders, output_path)
+            print(f"\n  历史已导出 JSON: {output_path}")
+        elif fmt == "csv":
+            export_freeze_history_csv(orders, output_path)
+            print(f"\n  历史已导出 CSV: {output_path}")
+    return 0
+
+
+def cmd_freeze_release(args: argparse.Namespace) -> int:
+    config = load_config(args.config)
+    mgr = FreezeManager(config)
+    order_id = args.order_id
+
+    if not order_id:
+        print("✗ 请指定要解封的封存单 ID (--order-id)")
+        return 1
+
+    notes = args.notes or ""
+
+    try:
+        release_order = mgr.release_order(order_id, notes=notes)
+    except ValueError as e:
+        print(f"✗ 解封失败: {e}")
+        return 1
+    except PermissionError as e:
+        print(f"✗ 解封失败: {e}")
+        return 1
+
+    print(f"\n{'='*60}")
+    print(f"封存解封结果")
+    print(f"{'='*60}")
+    print(f"  原封存单: {order_id}")
+    print(f"  解封操作 ID: {release_order.order_id}")
+    print(f"  操作者: {release_order.operator}")
+    print(f"  创建时间: {release_order.created_at}")
+    print(f"  成功解封: {release_order.total_released}")
+    print(f"  冲突跳过: {release_order.total_conflicts}")
+    print(f"  注意: 仅撤销本封存单的封存，其他封存单不受影响")
+
+    for item in release_order.items:
+        fname = item.file.filename if item.file else "(无文件)"
+        status_label = _freeze_status_label(item.freeze_status)
+        print(f"    {status_label} {fname}")
+        if item.conflicts:
+            for c in item.conflicts:
+                print(f"        ⚠ [{c.category.value}] {c.detail}")
+
+    fmt = args.format
+    output_path = args.output
+    if fmt or output_path:
+        fmt = fmt or "json"
+        if not output_path:
+            output_path = f"freeze_release_{release_order.order_id}.{fmt}"
+        if fmt == "json":
+            export_freeze_order_json(release_order, output_path)
+            print(f"\n  解封结果已导出 JSON: {output_path}")
+        elif fmt == "csv":
+            export_freeze_order_csv(release_order, output_path)
+            print(f"\n  解封结果已导出 CSV: {output_path}")
+
+    if release_order.total_conflicts > 0:
+        return 1
+    return 0
+
+
+def cmd_freeze_export(args: argparse.Namespace) -> int:
+    config = load_config(args.config)
+    mgr = FreezeManager(config)
+
+    fmt = args.format or "json"
+    source = args.source or "active"
+    output_path = args.output
+
+    if source == "active":
+        items = mgr.get_active_frozen_files()
+        data = {
+            "source": "active",
+            "total": len(items),
+            "items": [i.to_dict() for i in items],
+        }
+        if not output_path:
+            output_path = f"freeze_active.{fmt}"
+        if fmt == "json":
+            from scan_sorter.utils import save_json
+            save_json(output_path, data)
+            print(f"  已导出 {len(items)} 个活跃封存文件到: {output_path}")
+        elif fmt == "csv":
+            import csv as _csv
+            fieldnames = [
+                "item_id", "filename", "path", "case_number", "batch_id",
+                "freeze_status", "frozen_at", "freeze_order_id",
+            ]
+            with open(output_path, "w", encoding="utf-8-sig", newline="") as f:
+                writer = _csv.DictWriter(f, fieldnames=fieldnames)
+                writer.writeheader()
+                for item in items:
+                    row = {
+                        "item_id": item.item_id,
+                        "filename": item.file.filename if item.file else "",
+                        "path": item.file.path if item.file else "",
+                        "case_number": item.file.case_number if item.file else "",
+                        "batch_id": item.file.batch_id if item.file else "",
+                        "freeze_status": item.freeze_status.value,
+                        "frozen_at": item.frozen_at,
+                        "freeze_order_id": item.freeze_order_id,
+                    }
+                    writer.writerow(row)
+            print(f"  已导出 {len(items)} 个活跃封存文件到: {output_path}")
+
+    elif source == "orders":
+        orders = mgr.list_orders()
+        if not output_path:
+            output_path = f"freeze_orders.{fmt}"
+        if fmt == "json":
+            export_freeze_history_json(orders, output_path)
+            print(f"  已导出 {len(orders)} 条封存记录到: {output_path}")
+        elif fmt == "csv":
+            export_freeze_history_csv(orders, output_path)
+            print(f"  已导出 {len(orders)} 条封存记录到: {output_path}")
+
+    elif source == "order":
+        order_id = getattr(args, "order_id", None)
+        if not order_id:
+            print("✗ source=order 时必须指定 --order-id")
+            return 1
+        order = mgr.get_order(order_id)
+        if not order:
+            print(f"✗ 封存单不存在: {order_id}")
+            return 1
+        if not output_path:
+            output_path = f"freeze_order_{order_id}.{fmt}"
+        if fmt == "json":
+            export_freeze_order_json(order, output_path)
+            print(f"  已导出封存单 {order_id} 到: {output_path}")
+        elif fmt == "csv":
+            export_freeze_order_csv(order, output_path)
+            print(f"  已导出封存单 {order_id} 到: {output_path}")
+
+    elif source == "preview":
+        case_numbers, batch_ids, date_from, date_to = _parse_freeze_filters(args)
+        preview = mgr.preview_freeze(
+            case_numbers=case_numbers,
+            batch_ids=batch_ids,
+            date_from=date_from,
+            date_to=date_to,
+        )
+        if not output_path:
+            output_path = f"freeze_preview_export.{fmt}"
+        if fmt == "json":
+            export_freeze_preview_json(preview, output_path)
+            print(f"  已导出预览结果到: {output_path}")
+        elif fmt == "csv":
+            export_freeze_preview_csv(preview, output_path)
+            print(f"  已导出预览结果到: {output_path}")
+
+    return 0
+
+
 def _print_result(result: dict) -> None:
     for key, value in result.items():
         if key == "details":
@@ -2234,6 +2611,151 @@ def build_parser() -> argparse.ArgumentParser:
     )
     p_ru.add_argument("--output", help="撤销结果导出路径")
 
+    p_fp = sub.add_parser("freeze-preview", help="封存预览:按案件号、批次号或时间范围预览将被封存的文件")
+    p_fp.add_argument(
+        "--case-numbers",
+        default=None,
+        help="按案件号筛选，多个用逗号分隔",
+    )
+    p_fp.add_argument(
+        "--batch-ids",
+        default=None,
+        help="按批次 ID 筛选，多个用逗号分隔",
+    )
+    p_fp.add_argument(
+        "--date-from",
+        default=None,
+        help="按归档起始日期筛选 (ISO格式, 如 2024-01-01)",
+    )
+    p_fp.add_argument(
+        "--date-to",
+        default=None,
+        help="按归档结束日期筛选 (ISO格式, 如 2024-12-31)",
+    )
+    p_fp.add_argument(
+        "--reason",
+        default=None,
+        help="封存原因 (默认从配置读取)",
+    )
+    p_fp.add_argument(
+        "--valid-days",
+        type=int,
+        default=None,
+        help="封存有效期天数 (默认从配置读取)",
+    )
+    p_fp.add_argument(
+        "--format",
+        choices=["json", "csv"],
+        default=None,
+        help="导出格式 (不指定则不导出文件)",
+    )
+    p_fp.add_argument("--output", help="预览结果导出路径")
+
+    p_fc = sub.add_parser("freeze-confirm", help="确认封存:执行封存操作，写入状态文件")
+    p_fc.add_argument(
+        "--case-numbers",
+        default=None,
+        help="按案件号筛选，多个用逗号分隔",
+    )
+    p_fc.add_argument(
+        "--batch-ids",
+        default=None,
+        help="按批次 ID 筛选，多个用逗号分隔",
+    )
+    p_fc.add_argument(
+        "--date-from",
+        default=None,
+        help="按归档起始日期筛选 (ISO格式, 如 2024-01-01)",
+    )
+    p_fc.add_argument(
+        "--date-to",
+        default=None,
+        help="按归档结束日期筛选 (ISO格式, 如 2024-12-31)",
+    )
+    p_fc.add_argument(
+        "--reason",
+        default=None,
+        help="封存原因 (默认从配置读取)",
+    )
+    p_fc.add_argument(
+        "--valid-days",
+        type=int,
+        default=None,
+        help="封存有效期天数 (默认从配置读取)",
+    )
+    p_fc.add_argument("--notes", default=None, help="本次封存备注")
+    p_fc.add_argument(
+        "--format",
+        choices=["json", "csv"],
+        default=None,
+        help="导出格式 (不指定则不导出文件)",
+    )
+    p_fc.add_argument("--output", help="封存单导出路径")
+
+    p_fh = sub.add_parser("freeze-history", help="封存历史:查询封存、解封操作记录")
+    p_fh.add_argument(
+        "--order-type",
+        choices=["freeze", "release"],
+        default=None,
+        help="按订单类型筛选",
+    )
+    p_fh.add_argument(
+        "--status",
+        choices=["active", "released", "completed"],
+        default=None,
+        help="按状态筛选",
+    )
+    p_fh.add_argument(
+        "--limit",
+        type=int,
+        default=None,
+        help="限制返回的最近记录数",
+    )
+    p_fh.add_argument(
+        "--format",
+        choices=["json", "csv"],
+        default=None,
+        help="导出格式 (不指定则不导出文件)",
+    )
+    p_fh.add_argument("--output", help="历史记录导出路径")
+
+    p_fr = sub.add_parser("freeze-release", help="解封:按封存单撤销封存")
+    p_fr.add_argument("--order-id", help="要解封的封存单 ID")
+    p_fr.add_argument("--notes", default=None, help="解封备注")
+    p_fr.add_argument(
+        "--format",
+        choices=["json", "csv"],
+        default=None,
+        help="导出格式 (不指定则不导出文件)",
+    )
+    p_fr.add_argument("--output", help="解封结果导出路径")
+
+    p_fe = sub.add_parser("freeze-export", help="封存数据导出:导出活跃封存文件、历史记录、预览")
+    p_fe.add_argument(
+        "--source",
+        choices=["active", "orders", "order", "preview"],
+        default="active",
+        help="导出源 (默认: active 活跃封存文件)",
+    )
+    p_fe.add_argument(
+        "--format",
+        choices=["json", "csv"],
+        default="json",
+        help="导出格式 (默认: json)",
+    )
+    p_fe.add_argument("--output", help="输出文件路径")
+    p_fe.add_argument("--order-id", default=None, help="单个封存单 ID (source=order 时必填)")
+    p_fe.add_argument(
+        "--case-numbers",
+        default=None,
+        help="source=preview 时按案件号筛选",
+    )
+    p_fe.add_argument(
+        "--batch-ids",
+        default=None,
+        help="source=preview 时按批次 ID 筛选",
+    )
+
     return parser
 
 
@@ -2274,6 +2796,11 @@ def main(argv: list[str] | None = None) -> int:
         "retention-export": cmd_retention_export,
         "retention-defer": cmd_retention_defer,
         "retention-undo": cmd_retention_undo,
+        "freeze-preview": cmd_freeze_preview,
+        "freeze-confirm": cmd_freeze_confirm,
+        "freeze-history": cmd_freeze_history,
+        "freeze-release": cmd_freeze_release,
+        "freeze-export": cmd_freeze_export,
     }
 
     handler = dispatch.get(args.command)

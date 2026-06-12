@@ -38,6 +38,36 @@ class RetentionConfig:
 
 
 @dataclass
+class FreezeConfig:
+    enabled: bool = False
+    state_file: str = "freeze_state.json"
+    log_file: str = "freeze_log.jsonl"
+    default_reason: str = "临时封存"
+    default_operator: str = "unknown"
+    default_valid_days: int = 30
+    max_frozen_files: int = 1000
+    check_write_permission: bool = True
+
+    def state_path(self, logging_dir: str) -> str:
+        return os.path.join(logging_dir, self.state_file)
+
+    def log_path(self, logging_dir: str) -> str:
+        return os.path.join(logging_dir, self.log_file)
+
+    def to_dict(self) -> dict:
+        return {
+            "enabled": self.enabled,
+            "state_file": self.state_file,
+            "log_file": self.log_file,
+            "default_reason": self.default_reason,
+            "default_operator": self.default_operator,
+            "default_valid_days": self.default_valid_days,
+            "max_frozen_files": self.max_frozen_files,
+            "check_write_permission": self.check_write_permission,
+        }
+
+
+@dataclass
 class RuleConfig:
     case_number_pattern: str = r"(\d{4}-[A-Z]\d{3})"
     file_pattern: str = r"(\d{4}-[A-Z]\d{3}-\d{3})\.(pdf|jpg|jpeg|png|tiff|bmp)$"
@@ -119,6 +149,7 @@ class AppConfig:
     logging: LoggingConfig = field(default_factory=LoggingConfig)
     watch: WatchConfig = field(default_factory=WatchConfig)
     retention: RetentionConfig = field(default_factory=RetentionConfig)
+    freeze: FreezeConfig = field(default_factory=FreezeConfig)
     _source_path: Optional[str] = None
 
     def to_dict(self) -> dict:
@@ -131,6 +162,7 @@ class AppConfig:
             "logging": self.logging.to_dict(),
             "watch": self.watch.to_dict(),
             "retention": self.retention.to_dict(),
+            "freeze": self.freeze.to_dict(),
         }
 
 
@@ -187,6 +219,18 @@ def load_config(path: str) -> AppConfig:
         rules=retention_rules,
     )
 
+    freeze_raw = raw.get("freeze", {})
+    freeze = FreezeConfig(
+        enabled=freeze_raw.get("enabled", False),
+        state_file=freeze_raw.get("state_file", "freeze_state.json"),
+        log_file=freeze_raw.get("log_file", "freeze_log.jsonl"),
+        default_reason=freeze_raw.get("default_reason", "临时封存"),
+        default_operator=freeze_raw.get("default_operator", "unknown"),
+        default_valid_days=freeze_raw.get("default_valid_days", 30),
+        max_frozen_files=freeze_raw.get("max_frozen_files", 1000),
+        check_write_permission=freeze_raw.get("check_write_permission", True),
+    )
+
     config = AppConfig(
         intake_dir=raw.get("intake_dir", "./samples/intake"),
         target_base=raw.get("target_base", "./samples/target"),
@@ -196,6 +240,7 @@ def load_config(path: str) -> AppConfig:
         logging=logging,
         watch=watch,
         retention=retention,
+        freeze=freeze,
         _source_path=os.path.abspath(path),
     )
     return config
