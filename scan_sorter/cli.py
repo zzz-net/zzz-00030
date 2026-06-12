@@ -64,9 +64,37 @@ from scan_sorter.handoff_importer import (
     rollback_handoff_import,
 )
 from scan_sorter.config import AppConfig
+from scan_sorter.retention_manager import (
+    RetentionManager,
+    export_preview_json,
+    export_preview_csv,
+    export_run_json,
+    export_run_csv,
+    export_history_json,
+    export_history_csv,
+)
 
-sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding="utf-8", errors="replace")
-sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding="utf-8", errors="replace")
+_stdout_wrapped = False
+
+
+def _wrap_stdout_for_windows():
+    global _stdout_wrapped
+    if _stdout_wrapped:
+        return
+    if sys.platform != "win32":
+        return
+    if not hasattr(sys.stdout, "buffer") or not hasattr(sys.stderr, "buffer"):
+        return
+    try:
+        sys.stdout = io.TextIOWrapper(
+            sys.stdout.buffer, encoding="utf-8", errors="replace", line_buffering=True
+        )
+        sys.stderr = io.TextIOWrapper(
+            sys.stderr.buffer, encoding="utf-8", errors="replace", line_buffering=True
+        )
+        _stdout_wrapped = True
+    except Exception:
+        pass
 
 
 def export_dryrun_plan_json(plan, output_path: str) -> None:
@@ -1359,6 +1387,414 @@ def cmd_handoff_history(args: argparse.Namespace) -> None:
             print(f"\n  历史已导出 CSV: {output_path}")
 
 
+def _disposal_status_label(status) -> str:
+    from scan_sorter.models import DisposalStatus as DS
+    return {
+        DS.PENDING: "○ 未到期",
+        DS.EXPIRED: "⏰ 已到期",
+        DS.DEFERRED: "⏳ 暂缓",
+        DS.MARKED: "🔴 已标记销毁",
+        DS.CONFLICT: "⚠ 存在冲突",
+        DS.UNDO: "↺ 已撤销",
+    }.get(status, status.value)
+
+
+def cmd_retention_preview(args: argparse.Namespace) -> None:
+    config = load_config(args.config)
+    mgr = RetentionManager(config)
+
+    case_numbers = None
+    if args.case_numbers:
+        case_numbers = [c.strip() for c in args.case_numbers.split(",") if c.strip()]
+    batch_ids = None
+    if args.batch_ids:
+        batch_ids = [b.strip() for b in args.batch_ids.split(",") if b.strip()]
+
+    preview = mgr.preview(case_numbers=case_numbers, batch_ids=batch_ids)
+
+    print(f"\n{'='*60}")
+    print(f"归档保留期限预览")
+    print(f"{'='*60}")
+    print(f"  目标目录: {os.path.abspath(config.target_base)}")
+    print(f"  归档文件总数: {preview.total_files}")
+    print(f"  已到期: {preview.expired_count}")
+    print(f"  未到期: {preview.pending_count}")
+    print(f"  暂缓: {preview.deferred_count}")
+    print(f"  冲突: {preview.conflict_count}")
+
+    if preview.rule_summary:
+        print(f"\n  {'='*20} 规则统计 {'='*20}")
+        for k, v in preview.rule_summary.items():
+            print(f"    {k}: {v} 个文件")
+
+    if preview.items:
+        print(f"\n  {'='*20} 文件明细 {'='*20}")
+        for item in preview.items[:50]:
+            fname = item.file.filename if item.file else "(无文件)"
+            case = item.file.case_number if item.file else ""
+            status_label = _disposal_status_label(item.disposal_status)
+            line = f"  {status_label} {fname}"
+            if case:
+                line += f" [案件: {case}]"
+            line += f" 到期: {item.expires_at}"
+            if item.matched_rule_name:
+                line += f" 规则: {item.matched_rule_name}({item.retention_days}天)"
+            print(line)
+
+            if item.defer_reason:
+                print(f"      ⏳ 暂缓原因: {item.defer_reason}")
+                if item.defer_until:
+                    print(f"      暂缓至: {item.defer_until}")
+            if item.conflicts:
+                for c in item.conflicts:
+                    print(f"      ⚠ [{c.category.value}] {c.detail}")
+        if len(preview.items) > 50:
+            print(f"    ... 还有 {len(preview.items) - 50} 个文件")
+
+    fmt = args.format
+    output_path = args.output
+    if fmt or output_path:
+        fmt = fmt or "json"
+        if not output_path:
+            output_path = f"retention_preview.{fmt}"
+        if fmt == "json":
+            export_preview_json(preview, output_path)
+            print(f"\n  预览已导出 JSON: {output_path}")
+        elif fmt == "csv":
+            export_preview_csv(preview, output_path)
+            print(f"\n  预览已导出 CSV: {output_path}")
+
+
+def cmd_retention_generate(args: argparse.Namespace) -> int:
+    config = load_config(args.config)
+    mgr = RetentionManager(config)
+
+    case_numbers = None
+    if args.case_numbers:
+        case_numbers = [c.strip() for c in args.case_numbers.split(",") if c.strip()]
+    batch_ids = None
+    if args.batch_ids:
+        batch_ids = [b.strip() for b in args.batch_ids.split(",") if b.strip()]
+
+    if not args.confirm:
+        print(f"\n{'='*60}")
+        print(f"归档销毁清单预览模式 (使用 --confirm 确认生成)")
+        print(f"{'='*60}")
+        preview = mgr.preview(case_numbers=case_numbers, batch_ids=batch_ids)
+        print(f"  预计标记销毁: {preview.expired_count} 个文件")
+        print(f"  冲突跳过: {preview.conflict_count} 个文件")
+        print(f"  已暂缓: {preview.deferred_count} 个文件")
+        return 0
+
+    notes = args.notes or ""
+    run = mgr.generate_disposal_list(
+        case_numbers=case_numbers, batch_ids=batch_ids, notes=notes,
+    )
+
+    print(f"\n{'='*60}")
+    print(f"归档销毁处置清单")
+    print(f"{'='*60}")
+    print(f"  运行 ID: {run.run_id}")
+    print(f"  操作者: {run.operator}")
+    print(f"  创建时间: {run.created_at}")
+    print(f"  已标记销毁: {run.total_marked}")
+    print(f"  暂缓: {run.total_deferred}")
+    print(f"  冲突: {run.total_conflicts}")
+    if run.notes:
+        print(f"  备注: {run.notes}")
+
+    for item in run.items:
+        fname = item.file.filename if item.file else "(无文件)"
+        status_label = _disposal_status_label(item.disposal_status)
+        print(f"    {status_label} {fname}")
+        if item.conflicts:
+            for c in item.conflicts:
+                print(f"        ⚠ [{c.category.value}] {c.detail}")
+
+    fmt = args.format
+    output_path = args.output
+    if fmt or output_path:
+        fmt = fmt or "json"
+        if not output_path:
+            output_path = f"retention_generate_{run.run_id}.{fmt}"
+        if fmt == "json":
+            export_run_json(run, output_path)
+            print(f"\n  清单已导出 JSON: {output_path}")
+        elif fmt == "csv":
+            export_run_csv(run, output_path)
+            print(f"\n  清单已导出 CSV: {output_path}")
+
+    check = mgr.consistency_check()
+    print(f"\n  状态一致性: {'✓ 通过' if check['is_consistent'] else '✗ 存在问题'}")
+    if not check["is_consistent"]:
+        for issue in check["issues"]:
+            print(f"    ⚠ {issue['type']}: {issue['count']} 项")
+        return 1
+    return 0
+
+
+def cmd_retention_history(args: argparse.Namespace) -> None:
+    config = load_config(args.config)
+    mgr = RetentionManager(config)
+
+    run_type = getattr(args, "run_type", None)
+    limit = getattr(args, "limit", None)
+
+    runs = mgr.list_runs(run_type=run_type, limit=limit)
+
+    print(f"\n{'='*60}")
+    print(f"归档销毁运行历史")
+    print(f"{'='*60}")
+    print(f"  状态文件: {mgr.state_path}")
+    print(f"  记录总数: {len(runs)}")
+
+    if not runs:
+        print("  (无记录)")
+    else:
+        for run in runs:
+            print(f"\n  [{run.run_id}] {run.run_type}")
+            print(f"      时间: {run.created_at}")
+            print(f"      操作者: {run.operator}")
+            if run.run_type == "generate":
+                print(f"      标记销毁: {run.total_marked}, 暂缓: {run.total_deferred}, 冲突: {run.total_conflicts}")
+            elif run.run_type == "defer":
+                print(f"      暂缓: {run.total_deferred}, 冲突: {run.total_conflicts}")
+            elif run.run_type == "undo":
+                print(f"      撤销: {run.total_undone}, 冲突: {run.total_conflicts}")
+            if run.notes:
+                print(f"      备注: {run.notes}")
+
+    fmt = args.format
+    output_path = args.output
+    if fmt or output_path:
+        fmt = fmt or "json"
+        if not output_path:
+            suffix = run_type or "all"
+            output_path = f"retention_history_{suffix}.{fmt}"
+        if fmt == "json":
+            export_history_json(runs, output_path)
+            print(f"\n  历史已导出 JSON: {output_path}")
+        elif fmt == "csv":
+            export_history_csv(runs, output_path)
+            print(f"\n  历史已导出 CSV: {output_path}")
+
+
+def cmd_retention_export(args: argparse.Namespace) -> None:
+    config = load_config(args.config)
+    mgr = RetentionManager(config)
+
+    fmt = args.format or "json"
+    source = args.source or "marked"
+    output_path = args.output
+
+    if source == "marked":
+        items = mgr.get_marked_files()
+        from scan_sorter.models import RetentionPreviewResult
+        data = {
+            "source": "marked",
+            "total": len(items),
+            "items": [i.to_dict() for i in items],
+        }
+        if not output_path:
+            output_path = f"retention_marked.{fmt}"
+        if fmt == "json":
+            from scan_sorter.utils import save_json
+            save_json(output_path, data)
+            print(f"已导出 JSON: {output_path} ({len(items)} 条)")
+        elif fmt == "csv":
+            import csv as csv_mod
+            from scan_sorter.utils import ensure_dir
+            ensure_dir(os.path.dirname(output_path))
+            fieldnames = [
+                "filename", "path", "case_number", "batch_id",
+                "disposal_status", "expires_at", "defer_until",
+                "matched_rule_name", "retention_days", "marked_run_id",
+            ]
+            with open(output_path, "w", encoding="utf-8-sig", newline="") as f:
+                writer = csv_mod.DictWriter(f, fieldnames=fieldnames)
+                writer.writeheader()
+                for it in items:
+                    fi = it.file.to_dict() if it.file else {}
+                    row = {
+                        "filename": fi.get("filename", ""),
+                        "path": fi.get("path", ""),
+                        "case_number": fi.get("case_number", ""),
+                        "batch_id": fi.get("batch_id", ""),
+                        "disposal_status": it.disposal_status.value,
+                        "expires_at": it.expires_at,
+                        "defer_until": it.defer_until,
+                        "matched_rule_name": it.matched_rule_name,
+                        "retention_days": it.retention_days,
+                        "marked_run_id": it.marked_run_id,
+                    }
+                    writer.writerow(row)
+            print(f"已导出 CSV: {output_path} ({len(items)} 条)")
+    elif source == "runs":
+        runs = mgr.list_runs()
+        if not output_path:
+            output_path = f"retention_runs.{fmt}"
+        if fmt == "json":
+            export_history_json(runs, output_path)
+            print(f"已导出历史 JSON: {output_path} ({len(runs)} 条)")
+        elif fmt == "csv":
+            export_history_csv(runs, output_path)
+            print(f"已导出历史 CSV: {output_path} ({len(runs)} 条)")
+    elif source == "run":
+        run_id = args.run_id
+        if not run_id:
+            print("✗ 导出单个运行需指定 --run-id")
+            return
+        run = mgr.get_run(run_id)
+        if not run:
+            print(f"✗ 未找到运行: {run_id}")
+            return
+        if not output_path:
+            output_path = f"retention_run_{run_id}.{fmt}"
+        if fmt == "json":
+            export_run_json(run, output_path)
+            print(f"已导出运行 JSON: {output_path} ({len(run.items)} 项)")
+        elif fmt == "csv":
+            export_run_csv(run, output_path)
+            print(f"已导出运行 CSV: {output_path} ({len(run.items)} 项)")
+    elif source == "preview":
+        case_numbers = None
+        if args.case_numbers:
+            case_numbers = [c.strip() for c in args.case_numbers.split(",") if c.strip()]
+        batch_ids = None
+        if args.batch_ids:
+            batch_ids = [b.strip() for b in args.batch_ids.split(",") if b.strip()]
+        preview = mgr.preview(case_numbers=case_numbers, batch_ids=batch_ids)
+        if not output_path:
+            output_path = f"retention_preview_export.{fmt}"
+        if fmt == "json":
+            export_preview_json(preview, output_path)
+            print(f"已导出预览 JSON: {output_path} ({preview.total_files} 项)")
+        elif fmt == "csv":
+            export_preview_csv(preview, output_path)
+            print(f"已导出预览 CSV: {output_path} ({preview.total_files} 项)")
+
+
+def cmd_retention_defer(args: argparse.Namespace) -> int:
+    config = load_config(args.config)
+    mgr = RetentionManager(config)
+
+    paths = None
+    if args.paths:
+        paths = [p.strip() for p in args.paths.split(",") if p.strip()]
+    if not paths:
+        print("✗ 请使用 --paths 指定要暂缓的文件路径，多个用逗号分隔")
+        return 1
+
+    case_numbers = None
+    if args.case_numbers:
+        case_numbers = [c.strip() for c in args.case_numbers.split(",") if c.strip()]
+    batch_ids = None
+    if args.batch_ids:
+        batch_ids = [b.strip() for b in args.batch_ids.split(",") if b.strip()]
+
+    reason = args.reason or ""
+    defer_days = int(args.days) if args.days else 30
+
+    run = mgr.mark_deferred(
+        paths=paths,
+        reason=reason,
+        defer_days=defer_days,
+        case_numbers=case_numbers,
+        batch_ids=batch_ids,
+    )
+
+    print(f"\n{'='*60}")
+    print(f"归档暂缓标记结果")
+    print(f"{'='*60}")
+    print(f"  运行 ID: {run.run_id}")
+    print(f"  操作者: {run.operator}")
+    print(f"  创建时间: {run.created_at}")
+    print(f"  暂缓天数: {defer_days} 天")
+    print(f"  暂缓成功: {run.total_deferred}")
+    print(f"  冲突跳过: {run.total_conflicts}")
+    if reason:
+        print(f"  暂缓原因: {reason}")
+
+    for item in run.items:
+        fname = item.file.filename if item.file else "(无文件)"
+        status_label = _disposal_status_label(item.disposal_status)
+        print(f"    {status_label} {fname}")
+        if item.disposal_status.value == "deferred":
+            print(f"        暂缓至: {item.defer_until}")
+        if item.conflicts:
+            for c in item.conflicts:
+                print(f"        ⚠ [{c.category.value}] {c.detail}")
+
+    fmt = args.format
+    output_path = args.output
+    if fmt or output_path:
+        fmt = fmt or "json"
+        if not output_path:
+            output_path = f"retention_defer_{run.run_id}.{fmt}"
+        if fmt == "json":
+            export_run_json(run, output_path)
+            print(f"\n  暂缓结果已导出 JSON: {output_path}")
+        elif fmt == "csv":
+            export_run_csv(run, output_path)
+            print(f"\n  暂缓结果已导出 CSV: {output_path}")
+
+    if run.total_conflicts > 0:
+        return 1
+    return 0
+
+
+def cmd_retention_undo(args: argparse.Namespace) -> int:
+    config = load_config(args.config)
+    mgr = RetentionManager(config)
+    run_id = args.run_id
+
+    if not run_id:
+        print("✗ 请指定要撤销的运行 ID (--run-id)")
+        return 1
+
+    try:
+        run = mgr.undo_run(run_id)
+    except ValueError as e:
+        print(f"✗ 撤销失败: {e}")
+        return 1
+
+    print(f"\n{'='*60}")
+    print(f"撤销运行结果")
+    print(f"{'='*60}")
+    print(f"  撤销目标运行: {run_id}")
+    print(f"  撤销操作 ID: {run.run_id}")
+    print(f"  操作者: {run.operator}")
+    print(f"  创建时间: {run.created_at}")
+    print(f"  成功撤销: {run.total_undone}")
+    print(f"  冲突跳过: {run.total_conflicts}")
+    print(f"  注意: 仅回退本次运行的变更，审计日志保留")
+
+    for item in run.items:
+        fname = item.file.filename if item.file else "(无文件)"
+        status_label = _disposal_status_label(item.disposal_status)
+        print(f"    {status_label} {fname}")
+        if item.conflicts:
+            for c in item.conflicts:
+                print(f"        ⚠ [{c.category.value}] {c.detail}")
+
+    fmt = args.format
+    output_path = args.output
+    if fmt or output_path:
+        fmt = fmt or "json"
+        if not output_path:
+            output_path = f"retention_undo_{run.run_id}.{fmt}"
+        if fmt == "json":
+            export_run_json(run, output_path)
+            print(f"\n  撤销结果已导出 JSON: {output_path}")
+        elif fmt == "csv":
+            export_run_csv(run, output_path)
+            print(f"\n  撤销结果已导出 CSV: {output_path}")
+
+    if run.total_conflicts > 0:
+        return 1
+    return 0
+
+
 def _print_result(result: dict) -> None:
     for key, value in result.items():
         if key == "details":
@@ -1665,10 +2101,144 @@ def build_parser() -> argparse.ArgumentParser:
     )
     p_hh.add_argument("--output", help="历史记录导出路径")
 
+    p_rp = sub.add_parser("retention-preview", help="保留期限预览:扫描归档目录，计算到期、暂缓、冲突情况")
+    p_rp.add_argument(
+        "--case-numbers",
+        default=None,
+        help="按案件号筛选，多个用逗号分隔",
+    )
+    p_rp.add_argument(
+        "--batch-ids",
+        default=None,
+        help="按批次 ID 筛选，多个用逗号分隔",
+    )
+    p_rp.add_argument(
+        "--format",
+        choices=["json", "csv"],
+        default=None,
+        help="导出格式 (不指定则不导出文件)",
+    )
+    p_rp.add_argument("--output", help="预览结果导出路径")
+
+    p_rg = sub.add_parser("retention-generate", help="生成销毁清单:确认后标记到期文件为待销毁，写入状态文件")
+    p_rg.add_argument(
+        "--case-numbers",
+        default=None,
+        help="按案件号筛选，多个用逗号分隔",
+    )
+    p_rg.add_argument(
+        "--batch-ids",
+        default=None,
+        help="按批次 ID 筛选，多个用逗号分隔",
+    )
+    p_rg.add_argument(
+        "--confirm",
+        action="store_true",
+        default=False,
+        help="确认实际生成 (默认仅预览)",
+    )
+    p_rg.add_argument("--notes", default=None, help="本次运行备注")
+    p_rg.add_argument(
+        "--format",
+        choices=["json", "csv"],
+        default=None,
+        help="导出格式 (不指定则不导出文件)",
+    )
+    p_rg.add_argument("--output", help="清单导出路径")
+
+    p_rh = sub.add_parser("retention-history", help="保留运行历史:查询生成、暂缓、撤销操作记录")
+    p_rh.add_argument(
+        "--run-type",
+        choices=["generate", "defer", "undo"],
+        default=None,
+        help="按运行类型筛选",
+    )
+    p_rh.add_argument(
+        "--limit",
+        type=int,
+        default=None,
+        help="限制返回的最近记录数",
+    )
+    p_rh.add_argument(
+        "--format",
+        choices=["json", "csv"],
+        default=None,
+        help="导出格式 (不指定则不导出文件)",
+    )
+    p_rh.add_argument("--output", help="历史记录导出路径")
+
+    p_re = sub.add_parser("retention-export", help="保留数据导出:导出标记清单、运行历史、预览")
+    p_re.add_argument(
+        "--source",
+        choices=["marked", "runs", "run", "preview"],
+        default="marked",
+        help="导出源 (默认: marked 标记的文件)",
+    )
+    p_re.add_argument(
+        "--format",
+        choices=["json", "csv"],
+        default="json",
+        help="导出格式 (默认: json)",
+    )
+    p_re.add_argument("--output", help="输出文件路径")
+    p_re.add_argument("--run-id", default=None, help="单个运行 ID (source=run 时必填)")
+    p_re.add_argument(
+        "--case-numbers",
+        default=None,
+        help="source=preview 时按案件号筛选",
+    )
+    p_re.add_argument(
+        "--batch-ids",
+        default=None,
+        help="source=preview 时按批次 ID 筛选",
+    )
+
+    p_rd = sub.add_parser("retention-defer", help="暂缓销毁:指定文件路径标记暂缓，可设暂缓天数和原因")
+    p_rd.add_argument(
+        "--paths",
+        default=None,
+        help="要暂缓的文件路径，多个用逗号分隔",
+    )
+    p_rd.add_argument(
+        "--case-numbers",
+        default=None,
+        help="按案件号限定范围",
+    )
+    p_rd.add_argument(
+        "--batch-ids",
+        default=None,
+        help="按批次 ID 限定范围",
+    )
+    p_rd.add_argument(
+        "--days",
+        type=int,
+        default=30,
+        help="暂缓天数 (默认 30 天)",
+    )
+    p_rd.add_argument("--reason", default=None, help="暂缓原因")
+    p_rd.add_argument(
+        "--format",
+        choices=["json", "csv"],
+        default=None,
+        help="导出格式 (不指定则不导出文件)",
+    )
+    p_rd.add_argument("--output", help="暂缓结果导出路径")
+
+    p_ru = sub.add_parser("retention-undo", help="撤销本次标记:仅回退指定运行的变更，保留审计日志")
+    p_ru.add_argument("--run-id", help="要撤销的运行 ID")
+    p_ru.add_argument(
+        "--format",
+        choices=["json", "csv"],
+        default=None,
+        help="导出格式 (不指定则不导出文件)",
+    )
+    p_ru.add_argument("--output", help="撤销结果导出路径")
+
     return parser
 
 
 def main(argv: list[str] | None = None) -> int:
+    _wrap_stdout_for_windows()
     parser = build_parser()
     args = parser.parse_args(argv)
 
@@ -1698,6 +2268,12 @@ def main(argv: list[str] | None = None) -> int:
         "handoff-import": cmd_handoff_import,
         "handoff-rollback": cmd_handoff_rollback,
         "handoff-history": cmd_handoff_history,
+        "retention-preview": cmd_retention_preview,
+        "retention-generate": cmd_retention_generate,
+        "retention-history": cmd_retention_history,
+        "retention-export": cmd_retention_export,
+        "retention-defer": cmd_retention_defer,
+        "retention-undo": cmd_retention_undo,
     }
 
     handler = dispatch.get(args.command)

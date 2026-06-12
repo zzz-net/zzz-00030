@@ -8,6 +8,34 @@ from typing import Optional
 
 import yaml
 
+from scan_sorter.models import RetentionRule
+
+
+@dataclass
+class RetentionConfig:
+    enabled: bool = False
+    state_file: str = "retention_state.json"
+    log_file: str = "retention_log.jsonl"
+    default_retention_days: int = 365
+    check_write_permission: bool = True
+    rules: list = field(default_factory=list)
+
+    def state_path(self, logging_dir: str) -> str:
+        return os.path.join(logging_dir, self.state_file)
+
+    def log_path(self, logging_dir: str) -> str:
+        return os.path.join(logging_dir, self.log_file)
+
+    def to_dict(self) -> dict:
+        return {
+            "enabled": self.enabled,
+            "state_file": self.state_file,
+            "log_file": self.log_file,
+            "default_retention_days": self.default_retention_days,
+            "check_write_permission": self.check_write_permission,
+            "rules": [r.to_dict() if hasattr(r, "to_dict") else r for r in self.rules],
+        }
+
 
 @dataclass
 class RuleConfig:
@@ -90,6 +118,7 @@ class AppConfig:
     batch: BatchConfig = field(default_factory=BatchConfig)
     logging: LoggingConfig = field(default_factory=LoggingConfig)
     watch: WatchConfig = field(default_factory=WatchConfig)
+    retention: RetentionConfig = field(default_factory=RetentionConfig)
     _source_path: Optional[str] = None
 
     def to_dict(self) -> dict:
@@ -101,6 +130,7 @@ class AppConfig:
             "batch": self.batch.to_dict(),
             "logging": self.logging.to_dict(),
             "watch": self.watch.to_dict(),
+            "retention": self.retention.to_dict(),
         }
 
 
@@ -143,6 +173,20 @@ def load_config(path: str) -> AppConfig:
         poll_interval=watch_raw.get("poll_interval", 5),
     )
 
+    retention_raw = raw.get("retention", {})
+    rules_raw = retention_raw.get("rules", [])
+    retention_rules = []
+    for r in rules_raw:
+        retention_rules.append(RetentionRule.from_dict(r))
+    retention = RetentionConfig(
+        enabled=retention_raw.get("enabled", False),
+        state_file=retention_raw.get("state_file", "retention_state.json"),
+        log_file=retention_raw.get("log_file", "retention_log.jsonl"),
+        default_retention_days=retention_raw.get("default_retention_days", 365),
+        check_write_permission=retention_raw.get("check_write_permission", True),
+        rules=retention_rules,
+    )
+
     config = AppConfig(
         intake_dir=raw.get("intake_dir", "./samples/intake"),
         target_base=raw.get("target_base", "./samples/target"),
@@ -151,6 +195,7 @@ def load_config(path: str) -> AppConfig:
         batch=batch,
         logging=logging,
         watch=watch,
+        retention=retention,
         _source_path=os.path.abspath(path),
     )
     return config

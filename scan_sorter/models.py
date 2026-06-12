@@ -3,8 +3,17 @@ from __future__ import annotations
 import enum
 import uuid
 from dataclasses import dataclass, field
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Optional
+
+try:
+    from zoneinfo import ZoneInfo
+except Exception:
+    try:
+        from backports.zoneinfo import ZoneInfo
+    except Exception:
+        def ZoneInfo(key):
+            return timezone.utc
 
 
 class FileStatus(enum.Enum):
@@ -808,3 +817,254 @@ class HandoffRollbackResult:
             "operation_id": self.operation_id,
             "details": self.details,
         }
+
+
+class DisposalStatus(enum.Enum):
+    PENDING = "pending"
+    EXPIRED = "expired"
+    DEFERRED = "deferred"
+    MARKED = "marked"
+    CONFLICT = "conflict"
+    UNDO = "undo"
+
+
+class ConflictCategory(enum.Enum):
+    IN_ERROR_QUEUE = "in_error_queue"
+    FILE_MISSING = "file_missing"
+    TARGET_OCCUPIED = "target_occupied"
+    DUPLICATE_MARK = "duplicate_mark"
+    RULE_CHANGED = "rule_changed"
+    NO_WRITE_PERMISSION = "no_write_permission"
+
+
+@dataclass
+class RetentionRule:
+    rule_id: str = ""
+    name: str = ""
+    description: str = ""
+    case_number_pattern: str = ".*"
+    batch_id_pattern: str = ".*"
+    retention_days: int = 365
+    effective_from: str = ""
+
+    def to_dict(self) -> dict:
+        return {
+            "rule_id": self.rule_id,
+            "name": self.name,
+            "description": self.description,
+            "case_number_pattern": self.case_number_pattern,
+            "batch_id_pattern": self.batch_id_pattern,
+            "retention_days": self.retention_days,
+            "effective_from": self.effective_from,
+        }
+
+    @classmethod
+    def from_dict(cls, d: dict) -> RetentionRule:
+        return cls(
+            rule_id=d.get("rule_id", ""),
+            name=d.get("name", ""),
+            description=d.get("description", ""),
+            case_number_pattern=d.get("case_number_pattern", ".*"),
+            batch_id_pattern=d.get("batch_id_pattern", ".*"),
+            retention_days=int(d.get("retention_days", 365)),
+            effective_from=d.get("effective_from", ""),
+        )
+
+
+@dataclass
+class ArchivedFile:
+    path: str
+    filename: str
+    case_number: str = ""
+    batch_id: str = ""
+    archived_at: datetime = field(default_factory=lambda: datetime.now(ZoneInfo("UTC")))
+    size: int = 0
+    sha256: str = ""
+    action_id: str = ""
+
+    def to_dict(self) -> dict:
+        return {
+            "path": self.path,
+            "filename": self.filename,
+            "case_number": self.case_number,
+            "batch_id": self.batch_id,
+            "archived_at": self.archived_at.isoformat() if isinstance(self.archived_at, datetime) else str(self.archived_at),
+            "size": self.size,
+            "sha256": self.sha256,
+            "action_id": self.action_id,
+        }
+
+    @classmethod
+    def from_dict(cls, d: dict) -> ArchivedFile:
+        raw_ts = d.get("archived_at", "")
+        if isinstance(raw_ts, datetime):
+            ts = raw_ts
+        elif raw_ts:
+            try:
+                ts = datetime.fromisoformat(raw_ts)
+            except Exception:
+                ts = datetime.now(ZoneInfo("UTC"))
+        else:
+            ts = datetime.now(ZoneInfo("UTC"))
+        if ts.tzinfo is None:
+            ts = ts.replace(tzinfo=ZoneInfo("UTC"))
+        return cls(
+            path=d.get("path", ""),
+            filename=d.get("filename", ""),
+            case_number=d.get("case_number", ""),
+            batch_id=d.get("batch_id", ""),
+            archived_at=ts,
+            size=int(d.get("size", 0)),
+            sha256=d.get("sha256", ""),
+            action_id=d.get("action_id", ""),
+        )
+
+
+@dataclass
+class ConflictDetail:
+    category: ConflictCategory
+    detail: str = ""
+    extra: dict = field(default_factory=dict)
+
+    def to_dict(self) -> dict:
+        return {
+            "category": self.category.value,
+            "detail": self.detail,
+            "extra": self.extra,
+        }
+
+
+@dataclass
+class DisposalItem:
+    item_id: str = field(default_factory=lambda: uuid.uuid4().hex[:12])
+    file: ArchivedFile | None = None
+    matched_rule_id: str = ""
+    matched_rule_name: str = ""
+    retention_days: int = 0
+    expires_at: str = ""
+    disposal_status: DisposalStatus = DisposalStatus.PENDING
+    defer_reason: str = ""
+    defer_until: str = ""
+    defer_run_id: str = ""
+    conflicts: list = field(default_factory=list)
+    marked_run_id: str = ""
+    marked_at: str = ""
+    undo_run_id: str = ""
+    undo_at: str = ""
+
+    def to_dict(self) -> dict:
+        return {
+            "item_id": self.item_id,
+            "file": self.file.to_dict() if self.file else None,
+            "matched_rule_id": self.matched_rule_id,
+            "matched_rule_name": self.matched_rule_name,
+            "retention_days": self.retention_days,
+            "expires_at": self.expires_at,
+            "disposal_status": self.disposal_status.value,
+            "defer_reason": self.defer_reason,
+            "defer_until": self.defer_until,
+            "defer_run_id": self.defer_run_id,
+            "conflicts": [c.to_dict() for c in self.conflicts],
+            "marked_run_id": self.marked_run_id,
+            "marked_at": self.marked_at,
+            "undo_run_id": self.undo_run_id,
+            "undo_at": self.undo_at,
+        }
+
+    @classmethod
+    def from_dict(cls, d: dict) -> DisposalItem:
+        file_raw = d.get("file")
+        conflicts_raw = d.get("conflicts", [])
+        conflicts = []
+        for c in conflicts_raw:
+            conflicts.append(ConflictDetail(
+                category=ConflictCategory(c.get("category", "file_missing")),
+                detail=c.get("detail", ""),
+                extra=c.get("extra", {}),
+            ))
+        return cls(
+            item_id=d.get("item_id", uuid.uuid4().hex[:12]),
+            file=ArchivedFile.from_dict(file_raw) if file_raw else None,
+            matched_rule_id=d.get("matched_rule_id", ""),
+            matched_rule_name=d.get("matched_rule_name", ""),
+            retention_days=int(d.get("retention_days", 0)),
+            expires_at=d.get("expires_at", ""),
+            disposal_status=DisposalStatus(d.get("disposal_status", "pending")),
+            defer_reason=d.get("defer_reason", ""),
+            defer_until=d.get("defer_until", ""),
+            defer_run_id=d.get("defer_run_id", ""),
+            conflicts=conflicts,
+            marked_run_id=d.get("marked_run_id", ""),
+            marked_at=d.get("marked_at", ""),
+            undo_run_id=d.get("undo_run_id", ""),
+            undo_at=d.get("undo_at", ""),
+        )
+
+
+@dataclass
+class RetentionPreviewResult:
+    total_files: int = 0
+    expired_count: int = 0
+    deferred_count: int = 0
+    conflict_count: int = 0
+    pending_count: int = 0
+    items: list = field(default_factory=list)
+    rule_summary: dict = field(default_factory=dict)
+
+    def to_dict(self) -> dict:
+        return {
+            "total_files": self.total_files,
+            "expired_count": self.expired_count,
+            "deferred_count": self.deferred_count,
+            "conflict_count": self.conflict_count,
+            "pending_count": self.pending_count,
+            "items": [i.to_dict() for i in self.items],
+            "rule_summary": self.rule_summary,
+        }
+
+
+@dataclass
+class RetentionRun:
+    run_id: str = field(default_factory=lambda: "RET-" + uuid.uuid4().hex[:10].upper())
+    run_type: str = ""
+    created_at: str = field(default_factory=lambda: datetime.now().isoformat())
+    operator: str = ""
+    config_snapshot: dict = field(default_factory=dict)
+    items: list = field(default_factory=list)
+    total_marked: int = 0
+    total_deferred: int = 0
+    total_conflicts: int = 0
+    total_undone: int = 0
+    notes: str = ""
+
+    def to_dict(self) -> dict:
+        return {
+            "run_id": self.run_id,
+            "run_type": self.run_type,
+            "created_at": self.created_at,
+            "operator": self.operator,
+            "config_snapshot": self.config_snapshot,
+            "items": [i.to_dict() for i in self.items],
+            "total_marked": self.total_marked,
+            "total_deferred": self.total_deferred,
+            "total_conflicts": self.total_conflicts,
+            "total_undone": self.total_undone,
+            "notes": self.notes,
+        }
+
+    @classmethod
+    def from_dict(cls, d: dict) -> RetentionRun:
+        items_raw = d.get("items", [])
+        return cls(
+            run_id=d.get("run_id", "RET-" + uuid.uuid4().hex[:10].upper()),
+            run_type=d.get("run_type", ""),
+            created_at=d.get("created_at", datetime.now().isoformat()),
+            operator=d.get("operator", ""),
+            config_snapshot=d.get("config_snapshot", {}),
+            items=[DisposalItem.from_dict(i) for i in items_raw],
+            total_marked=int(d.get("total_marked", 0)),
+            total_deferred=int(d.get("total_deferred", 0)),
+            total_conflicts=int(d.get("total_conflicts", 0)),
+            total_undone=int(d.get("total_undone", 0)),
+            notes=d.get("notes", ""),
+        )
