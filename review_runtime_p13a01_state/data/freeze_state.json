@@ -1,0 +1,61 @@
+{
+  "freeze_orders": [
+    {
+      "order_id": "FRZ-135FB68F07",
+      "order_type": "freeze",
+      "created_at": "2026-06-12T22:34:30.194903",
+      "operator": "reviewer",
+      "reason": "review-freeze",
+      "valid_days": 30,
+      "expires_at": "2026-07-12T14:34:30.194903+00:00",
+      "config_snapshot": {
+        "default_reason": "review-freeze",
+        "default_valid_days": 30,
+        "max_frozen_files": 100,
+        "target_base": "D:\\workSpace\\AI__SPACE\\zzz-00030\\review_runtime_p13a01_state\\target"
+      },
+      "items": [
+        {
+          "item_id": "fc9bff446b1d",
+          "file": {
+            "path": "D:\\workSpace\\AI__SPACE\\zzz-00030\\review_runtime_p13a01_state\\target\\0100\\CASE-0100_DOC1.pdf",
+            "filename": "CASE-0100_DOC1.pdf",
+            "case_number": "CASE-0100",
+            "batch_id": "",
+            "archived_at": "2026-04-28T22:34:29.890869+00:00",
+            "size": 30,
+            "sha256": "1428e95efadf594629d55fa5630c8b89ec9c882ff5904143d2ed4e4505a20349",
+            "action_id": ""
+          },
+          "freeze_status": "active",
+          "conflicts": [],
+          "freeze_order_id": "FRZ-135FB68F07",
+          "frozen_at": "2026-06-12T14:34:30.194903+00:00",
+          "released_at": "",
+          "release_order_id": ""
+        }
+      ],
+      "total_files": 1,
+      "total_frozen": 1,
+      "total_conflicts": 0,
+      "total_released": 0,
+      "notes": "review-freeze",
+      "status": "active"
+    }
+  ],
+  "config_signature": {
+    "default_reason": "review-freeze",
+    "default_valid_days": 30,
+    "max_frozen_files": 100,
+    "target_base": "D:\\workSpace\\AI__SPACE\\zzz-00030\\review_runtime_p13a01_state\\target"
+  },
+  "freeze_index": {
+    "D:\\workSpace\\AI__SPACE\\zzz-00030\\review_runtime_p13a01_state\\target\\0100\\CASE-0100_DOC1.pdf": {
+      "status": "active",
+      "order_id": "FRZ-135FB68F07",
+      "item_id": "fc9bff446b1d",
+      "frozen_at": "2026-06-12T14:34:30.194903+00:00",
+      "expires_at": ""
+    }
+  }
+}

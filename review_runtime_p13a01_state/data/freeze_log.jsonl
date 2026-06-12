@@ -1,0 +1,1 @@
+{"timestamp": "2026-06-12T14:34:30.194903+00:00", "event": "freeze_create", "order_id": "FRZ-135FB68F07", "operator": "reviewer", "reason": "review-freeze", "valid_days": 30, "total_files": 1, "frozen": 1, "conflicts": 0, "notes": "review-freeze"}

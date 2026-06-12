@@ -12,7 +12,7 @@ from typing import Any, Optional
 
 from scan_sorter.config import AppConfig, load_config
 from scan_sorter.models import ActionRecord, BatchRecord, ErrorItem
-from scan_sorter.utils import append_jsonl, load_json, read_jsonl, save_json
+from scan_sorter.utils import append_jsonl, file_hash, load_json, read_jsonl, save_json
 
 
 class MigrationItemType(Enum):
@@ -668,8 +668,23 @@ def analyze_action_log(
                         migrated=True,
                     ))
                 else:
-                    has_conflict, ctype, cdetail = _check_target_conflict(new_dest, diff)
-                    if has_conflict and old_dest != new_dest:
+                    has_conflict = False
+                    conflict_type: Optional[ConflictType] = None
+                    conflict_detail: Optional[str] = None
+                    if os.path.exists(new_dest) and os.path.exists(old_dest):
+                        try:
+                            if file_hash(new_dest) != file_hash(old_dest):
+                                has_conflict = True
+                                conflict_type = ConflictType.TARGET_FILE_EXISTS
+                                conflict_detail = f"目标文件已存在且内容与原文件不同: {new_dest}"
+                        except OSError:
+                            pass
+                    elif os.path.exists(new_dest):
+                        if os.path.isdir(new_dest):
+                            has_conflict = True
+                            conflict_type = ConflictType.TARGET_DIR_EXISTS
+                            conflict_detail = f"目标目录已存在: {new_dest}"
+                    if has_conflict:
                         items.append(MigrationItem(
                             item_type=MigrationItemType.ACTION_LOG,
                             record_id=record_id,
@@ -677,8 +692,8 @@ def analyze_action_log(
                             old_value=old_dest,
                             new_value=new_dest,
                             action=MigrationAction.CONFLICT,
-                            conflict_type=ctype,
-                            conflict_detail=cdetail,
+                            conflict_type=conflict_type,
+                            conflict_detail=conflict_detail,
                             fingerprint=fp,
                         ))
                     else:
@@ -923,6 +938,43 @@ def execute_migration(
             with open(new_config.logging.action_log_path(), "w", encoding="utf-8") as f:
                 for rec in action_data:
                     f.write(json.dumps(rec, ensure_ascii=False) + "\n")
+
+        if diff.target_base_changed:
+            freeze_state_path = os.path.join(new_config.logging.dir, "freeze_state.json")
+            if os.path.exists(freeze_state_path):
+                try:
+                    freeze_state = load_json(freeze_state_path, default={})
+                    old_tb_norm = os.path.normpath(os.path.abspath(diff.old_target_base))
+                    new_tb_norm = os.path.normpath(os.path.abspath(diff.new_target_base))
+
+                    new_freeze_index = {}
+                    for path_key, info in freeze_state.get("freeze_index", {}).items():
+                        norm_path = os.path.normpath(os.path.abspath(path_key))
+                        if norm_path.startswith(old_tb_norm + os.sep) or norm_path == old_tb_norm:
+                            new_key = norm_path.replace(old_tb_norm, new_tb_norm, 1)
+                            new_freeze_index[new_key] = info
+                        else:
+                            new_freeze_index[path_key] = info
+                    freeze_state["freeze_index"] = new_freeze_index
+
+                    for order_raw in freeze_state.get("freeze_orders", []):
+                        for item in order_raw.get("items", []):
+                            fi = item.get("file", {})
+                            if fi and fi.get("path"):
+                                norm_p = os.path.normpath(os.path.abspath(fi["path"]))
+                                if norm_p.startswith(old_tb_norm + os.sep) or norm_p == old_tb_norm:
+                                    fi["path"] = norm_p.replace(old_tb_norm, new_tb_norm, 1)
+
+                    cfg_sig = freeze_state.get("config_signature", {})
+                    if cfg_sig.get("target_base"):
+                        sig_tb = os.path.normpath(os.path.abspath(cfg_sig["target_base"]))
+                        if sig_tb == old_tb_norm:
+                            cfg_sig["target_base"] = new_tb_norm
+                    freeze_state["config_signature"] = cfg_sig
+
+                    save_json(freeze_state_path, freeze_state)
+                except Exception as e:
+                    stats.setdefault("warnings", []).append(f"freeze_state 更新失败: {e}")
 
         migration_log_path = os.path.join(
             new_config.logging.dir, "migration_log.jsonl"

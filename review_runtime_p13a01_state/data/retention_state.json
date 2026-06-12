@@ -1,0 +1,116 @@
+{
+  "retention_runs": [
+    {
+      "run_id": "RET-368AF0820D",
+      "run_type": "generate",
+      "created_at": "2026-06-12T22:34:30.818493",
+      "operator": "reviewer",
+      "config_snapshot": {
+        "default_retention_days": 30,
+        "rules": [
+          {
+            "rule_id": "R1",
+            "name": "default30",
+            "description": "",
+            "case_number_pattern": "CASE-\\d{4}",
+            "batch_id_pattern": ".*",
+            "retention_days": 30,
+            "effective_from": ""
+          }
+        ],
+        "target_base": "D:\\workSpace\\AI__SPACE\\zzz-00030\\review_runtime_p13a01_state\\target"
+      },
+      "items": [
+        {
+          "item_id": "616b586ff6fe",
+          "file": {
+            "path": "D:\\workSpace\\AI__SPACE\\zzz-00030\\review_runtime_p13a01_state\\target\\0100\\CASE-0100_DOC1.pdf",
+            "filename": "CASE-0100_DOC1.pdf",
+            "case_number": "0100",
+            "batch_id": "29f2347a",
+            "archived_at": "2026-04-28T22:34:29.889341+00:00",
+            "size": 30,
+            "sha256": "1428e95efadf594629d55fa5630c8b89ec9c882ff5904143d2ed4e4505a20349",
+            "action_id": "1be4d94379e6"
+          },
+          "matched_rule_id": "default",
+          "matched_rule_name": "默认规则",
+          "retention_days": 30,
+          "expires_at": "2026-05-28T22:34:29.889341+00:00",
+          "disposal_status": "conflict",
+          "defer_reason": "",
+          "defer_until": "",
+          "defer_run_id": "",
+          "conflicts": [
+            {
+              "category": "frozen_file",
+              "detail": "文件已被封存单 FRZ-135FB68F07 封存，不得清理",
+              "extra": {
+                "order_id": "FRZ-135FB68F07",
+                "frozen_at": "2026-06-12T14:34:30.194903+00:00"
+              }
+            }
+          ],
+          "marked_run_id": "",
+          "marked_at": "",
+          "undo_run_id": "",
+          "undo_at": ""
+        },
+        {
+          "item_id": "b0d094d7a250",
+          "file": {
+            "path": "D:\\workSpace\\AI__SPACE\\zzz-00030\\review_runtime_p13a01_state\\target\\0200\\CASE-0200_DOC1.pdf",
+            "filename": "CASE-0200_DOC1.pdf",
+            "case_number": "0200",
+            "batch_id": "29f2347a",
+            "archived_at": "2026-04-28T22:34:29.889341+00:00",
+            "size": 30,
+            "sha256": "c2d849e3c00aed14407054f9cacd3982748c5480ff174725339957bc9a2b41e5",
+            "action_id": "1dbb5049382a"
+          },
+          "matched_rule_id": "default",
+          "matched_rule_name": "默认规则",
+          "retention_days": 30,
+          "expires_at": "2026-05-28T22:34:29.889341+00:00",
+          "disposal_status": "marked",
+          "defer_reason": "",
+          "defer_until": "",
+          "defer_run_id": "",
+          "conflicts": [],
+          "marked_run_id": "RET-368AF0820D",
+          "marked_at": "2026-06-12T14:34:30.818493+00:00",
+          "undo_run_id": "",
+          "undo_at": ""
+        }
+      ],
+      "total_marked": 1,
+      "total_deferred": 0,
+      "total_conflicts": 1,
+      "total_undone": 0,
+      "notes": "review-generate"
+    }
+  ],
+  "config_signature": {
+    "default_retention_days": 30,
+    "rules": [
+      {
+        "rule_id": "R1",
+        "name": "default30",
+        "description": "",
+        "case_number_pattern": "CASE-\\d{4}",
+        "batch_id_pattern": ".*",
+        "retention_days": 30,
+        "effective_from": ""
+      }
+    ],
+    "target_base": "D:\\workSpace\\AI__SPACE\\zzz-00030\\review_runtime_p13a01_state\\target"
+  },
+  "mark_index": {
+    "D:\\workSpace\\AI__SPACE\\zzz-00030\\review_runtime_p13a01_state\\target\\0200\\CASE-0200_DOC1.pdf": {
+      "status": "marked",
+      "run_id": "RET-368AF0820D",
+      "item_id": "b0d094d7a250",
+      "marked_at": "2026-06-12T14:34:30.818493+00:00"
+    }
+  }
+}

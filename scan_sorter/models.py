@@ -835,6 +835,7 @@ class ConflictCategory(enum.Enum):
     DUPLICATE_MARK = "duplicate_mark"
     RULE_CHANGED = "rule_changed"
     NO_WRITE_PERMISSION = "no_write_permission"
+    FROZEN_FILE = "frozen_file"
 
 
 @dataclass
@@ -921,7 +922,7 @@ class ArchivedFile:
 
 
 @dataclass
-class ConflictDetail:
+class RetentionConflictDetail:
     category: ConflictCategory
     detail: str = ""
     extra: dict = field(default_factory=dict)
@@ -977,7 +978,7 @@ class DisposalItem:
         conflicts_raw = d.get("conflicts", [])
         conflicts = []
         for c in conflicts_raw:
-            conflicts.append(ConflictDetail(
+            conflicts.append(RetentionConflictDetail(
                 category=ConflictCategory(c.get("category", "file_missing")),
                 detail=c.get("detail", ""),
                 extra=c.get("extra", {}),

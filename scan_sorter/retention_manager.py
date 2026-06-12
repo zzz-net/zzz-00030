@@ -21,7 +21,7 @@ from scan_sorter.config import AppConfig, reload_config
 from scan_sorter.models import (
     ArchivedFile,
     ConflictCategory,
-    ConflictDetail,
+    RetentionConflictDetail,
     DisposalItem,
     DisposalStatus,
     RetentionPreviewResult,
@@ -226,13 +226,13 @@ class RetentionManager:
         af: ArchivedFile,
         previous_marks: dict,
         check_config: bool = True,
-    ) -> list[ConflictDetail]:
-        conflicts: list[ConflictDetail] = []
+    ) -> list[RetentionConflictDetail]:
+        conflicts: list[RetentionConflictDetail] = []
 
         eq = self.error_queue.find_by_path(af.path)
         if eq is not None:
             conflicts.append(
-                ConflictDetail(
+                RetentionConflictDetail(
                     category=ConflictCategory.IN_ERROR_QUEUE,
                     detail=f"案件 {af.case_number} 文件 {af.filename} 仍在错误队列中 (错误: {eq.error})",
                     extra={"error": eq.error, "retry_count": eq.retry_count},
@@ -241,7 +241,7 @@ class RetentionManager:
 
         if not os.path.exists(af.path):
             conflicts.append(
-                ConflictDetail(
+                RetentionConflictDetail(
                     category=ConflictCategory.FILE_MISSING,
                     detail=f"归档文件已丢失: {af.path}",
                     extra={"expected_path": af.path},
@@ -253,7 +253,7 @@ class RetentionManager:
                 st = os.stat(af.path)
                 if not (st.st_mode & stat.S_IWUSR):
                     conflicts.append(
-                        ConflictDetail(
+                        RetentionConflictDetail(
                             category=ConflictCategory.NO_WRITE_PERMISSION,
                             detail=f"目标文件无写权限: {af.path}",
                             extra={"path": af.path},
@@ -265,7 +265,7 @@ class RetentionManager:
         if not self._has_write_permission(af.path):
             if not any(c.category == ConflictCategory.NO_WRITE_PERMISSION for c in conflicts):
                 conflicts.append(
-                    ConflictDetail(
+                    RetentionConflictDetail(
                         category=ConflictCategory.NO_WRITE_PERMISSION,
                         detail=f"目标路径无写权限 (父目录不可写): {af.path}",
                         extra={"path": af.path},
@@ -277,18 +277,35 @@ class RetentionManager:
             mark_info = previous_marks[idx_key]
             if mark_info.get("status") in ("marked", "deferred"):
                 conflicts.append(
-                    ConflictDetail(
+                    RetentionConflictDetail(
                         category=ConflictCategory.DUPLICATE_MARK,
                         detail=f"文件已被 {mark_info.get('run_id', '未知批次')} 标记为 {mark_info.get('status')}",
                         extra={"run_id": mark_info.get("run_id"), "status": mark_info.get("status")},
                     )
                 )
 
+        freeze_idx_path = os.path.join(self.logging_dir, "freeze_state.json")
+        if os.path.exists(freeze_idx_path):
+            try:
+                freeze_state = load_json(freeze_idx_path, default={})
+                freeze_idx = freeze_state.get("freeze_index", {})
+                if idx_key in freeze_idx and freeze_idx[idx_key].get("status") == "active":
+                    order_id = freeze_idx[idx_key].get("order_id", "未知封存单")
+                    conflicts.append(
+                        RetentionConflictDetail(
+                            category=ConflictCategory.FROZEN_FILE,
+                            detail=f"文件已被封存单 {order_id} 封存，不得清理",
+                            extra={"order_id": order_id, "frozen_at": freeze_idx[idx_key].get("frozen_at", "")},
+                        )
+                    )
+            except Exception:
+                pass
+
         if check_config:
             change_msg = self._check_config_changed()
             if change_msg:
                 conflicts.append(
-                    ConflictDetail(
+                    RetentionConflictDetail(
                         category=ConflictCategory.RULE_CHANGED,
                         detail="保留规则配置已发生变化，建议先重新确认",
                         extra={"detail": change_msg},
@@ -464,7 +481,7 @@ class RetentionManager:
                 )
                 if not has_rule_change:
                     item.conflicts.append(
-                        ConflictDetail(
+                        RetentionConflictDetail(
                             category=ConflictCategory.RULE_CHANGED,
                             detail="保留规则配置已发生变化，建议先重新确认",
                             extra={"detail": rule_change_msg},
@@ -641,7 +658,7 @@ class RetentionManager:
                 else:
                     item.disposal_status = DisposalStatus.CONFLICT
                     item.conflicts = [
-                        ConflictDetail(
+                        RetentionConflictDetail(
                             category=ConflictCategory.DUPLICATE_MARK,
                             detail=f"无法撤销: 当前标记归属 {cur.get('run_id') if cur else '未知'}，非本次运行",
                             extra={"target_run_id": run_id, "current_run_id": cur.get("run_id") if cur else None},
@@ -673,7 +690,7 @@ class RetentionManager:
                 else:
                     item.disposal_status = DisposalStatus.CONFLICT
                     item.conflicts = [
-                        ConflictDetail(
+                        RetentionConflictDetail(
                             category=ConflictCategory.DUPLICATE_MARK,
                             detail=f"无法撤销暂缓: 当前标记归属 {cur.get('run_id') if cur else '未知'}，非本次运行",
                             extra={"target_run_id": run_id},

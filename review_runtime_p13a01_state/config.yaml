@@ -1,0 +1,26 @@
+freeze:
+  check_write_permission: true
+  default_reason: review-freeze
+  default_valid_days: 30
+  enabled: true
+  max_frozen_files: 100
+intake_dir: D:\workSpace\AI__SPACE\zzz-00030\review_runtime_p13a01_state\intake
+logging:
+  dir: D:\workSpace\AI__SPACE\zzz-00030\review_runtime_p13a01_state\data
+operator: reviewer
+retention:
+  check_write_permission: true
+  default_retention_days: 30
+  enabled: true
+  rules:
+  - batch_id_pattern: .*
+    case_number_pattern: CASE-\d{4}
+    name: default30
+    retention_days: 30
+    rule_id: R1
+rules:
+  action: copy
+  case_number_pattern: CASE-(\d+)
+  file_pattern: .*\.(pdf|jpg|png)$
+  target_structure: '{case_number}'
+target_base: D:\workSpace\AI__SPACE\zzz-00030\review_runtime_p13a01_state\target
