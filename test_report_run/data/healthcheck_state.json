@@ -1,5 +1,5 @@
 {
-  "last_check_time": "2026-06-12T08:04:09.961880",
+  "last_check_time": "2026-06-12T08:27:58.055693",
   "last_findings": [
     {
       "fingerprint": "d3e5921605ee45aa",
@@ -8,8 +8,8 @@
       "description": "配置变更导致目标路径偏移: 2024-D004-001.pdf 实际在 D:\\workSpace\\AI__SPACE\\zzz-00030\\test_report_run\\target_v2\\2024-D004, 当前配置指向 D:\\workSpace\\AI__SPACE\\zzz-00030\\test_report_run\\target\\2024-D004",
       "file_path": "D:\\workSpace\\AI__SPACE\\zzz-00030\\test_report_run\\target_v2\\2024-D004\\2024-D004-001.pdf",
       "queue_path": null,
-      "batch_id": "311d1c15",
-      "action_id": "2d2829c843a1",
+      "batch_id": "5376765d",
+      "action_id": "4196088f7961",
       "detail": {
         "actual_dir": "D:\\workSpace\\AI__SPACE\\zzz-00030\\test_report_run\\target_v2\\2024-D004",
         "expected_dir": "D:\\workSpace\\AI__SPACE\\zzz-00030\\test_report_run\\target\\2024-D004",
@@ -19,13 +19,13 @@
       "fix_description": "配置已变更,旧记录路径与新配置不匹配,需人工确认"
     },
     {
-      "fingerprint": "929ce5ce1cb88555",
+      "fingerprint": "4c74a517746e7231",
       "category": "batch_action_count_mismatch",
       "severity": "warning",
-      "description": "批次 9b854a7b succeeded=2 但 action_log 中有 4 条未回滚动作",
+      "description": "批次 9b72663a succeeded=2 但 action_log 中有 4 条未回滚动作",
       "file_path": null,
       "queue_path": null,
-      "batch_id": "9b854a7b",
+      "batch_id": "9b72663a",
       "action_id": null,
       "detail": {
         "batch_succeeded": 2,
@@ -37,6 +37,6 @@
   ],
   "finding_fingerprints": [
     "d3e5921605ee45aa",
-    "929ce5ce1cb88555"
+    "4c74a517746e7231"
   ]
 }

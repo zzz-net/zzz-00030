@@ -14,6 +14,14 @@ from scan_sorter.healthcheck import (
     export_findings_csv,
     export_findings_json,
 )
+from scan_sorter.migration import (
+    execute_migration,
+    export_plan_csv,
+    export_plan_json,
+    export_result_csv,
+    export_result_json,
+    generate_migration_plan,
+)
 from scan_sorter.report import (
     ReportGenerator,
     export_report_json,
@@ -433,6 +441,154 @@ def cmd_report(args: argparse.Namespace) -> int:
     return report.exit_code
 
 
+def cmd_migrate(args: argparse.Namespace) -> int:
+    new_config = load_config(args.config)
+    old_config_path = args.old_config
+
+    plan, state = generate_migration_plan(old_config_path, new_config)
+
+    dry_run = not args.confirm
+
+    if dry_run:
+        print(f"\n{'='*60}")
+        print(f"配置版本迁移计划 (dry-run 预览模式)")
+        print(f"{'='*60}")
+    else:
+        print(f"\n{'='*60}")
+        print(f"配置版本迁移 (执行模式)")
+        print(f"{'='*60}")
+
+    print(f"\n  旧配置: {os.path.abspath(old_config_path)}")
+    print(f"  新配置: {new_config._source_path}")
+
+    print(f"\n{'='*20} 配置差异 {'='*20}")
+    diff = plan.config_diff
+    if not diff.has_changes:
+        print("  无配置差异，无需迁移")
+        return 0
+
+    if diff.intake_changed:
+        print(f"  intake 目录: {diff.old_intake_dir} -> {diff.new_intake_dir}")
+    if diff.target_base_changed:
+        print(f"  target 目录: {diff.old_target_base} -> {diff.new_target_base}")
+    if diff.operator_changed:
+        print(f"  操作者: {diff.old_operator} -> {diff.new_operator}")
+    if diff.case_pattern_changed:
+        print(f"  案卷号规则: {diff.old_case_pattern} -> {diff.new_case_pattern}")
+    if diff.file_pattern_changed:
+        print(f"  文件名规则: {diff.old_file_pattern} -> {diff.new_file_pattern}")
+    if diff.target_structure_changed:
+        print(f"  目录结构: {diff.old_target_structure} -> {diff.new_target_structure}")
+    if diff.action_changed:
+        print(f"  操作方式: {diff.old_action} -> {diff.new_action}")
+
+    summary = plan.summary()
+    print(f"\n{'='*20} 迁移概览 {'='*20}")
+    print(f"  总计待处理: {summary['total_items']} 项")
+    print(f"  可自动迁移: {summary['auto_migrate']} 项")
+    print(f"  冲突: {summary['conflicts']} 项")
+    print(f"  需人工处理: {summary['manual_required']} 项")
+    print(f"  已迁移跳过: {summary['skipped']} 项")
+
+    if plan.items:
+        print(f"\n{'='*20} 详细迁移项 {'='*20}")
+
+        auto_items = [i for i in plan.items if i.action.value == "auto_migrate"]
+        conflict_items = [i for i in plan.items if i.action.value == "conflict"]
+        manual_items = [i for i in plan.items if i.action.value == "manual"]
+        skipped_items = [i for i in plan.items if i.action.value == "skipped"]
+
+        if auto_items:
+            print(f"\n  [可自动迁移] ({len(auto_items)} 项)")
+            for item in auto_items[:20]:
+                print(f"    ✓ [{item.item_type.value}] {item.record_id} "
+                      f"{item.field_name}: {item.old_value} -> {item.new_value}")
+            if len(auto_items) > 20:
+                print(f"    ... 还有 {len(auto_items) - 20} 项")
+
+        if conflict_items:
+            print(f"\n  [冲突] ({len(conflict_items)} 项)")
+            for item in conflict_items[:20]:
+                print(f"    ✗ [{item.item_type.value}] {item.record_id} "
+                      f"{item.field_name}: {item.old_value} -> {item.new_value}")
+                if item.conflict_detail:
+                    print(f"       原因: {item.conflict_detail}")
+            if len(conflict_items) > 20:
+                print(f"    ... 还有 {len(conflict_items) - 20} 项")
+
+        if manual_items:
+            print(f"\n  [需人工处理] ({len(manual_items)} 项)")
+            for item in manual_items[:20]:
+                print(f"    ⚠ [{item.item_type.value}] {item.record_id} "
+                      f"{item.field_name}: {item.old_value} -> {item.new_value}")
+                if item.conflict_detail:
+                    print(f"       原因: {item.conflict_detail}")
+            if len(manual_items) > 20:
+                print(f"    ... 还有 {len(manual_items) - 20} 项")
+
+        if skipped_items:
+            print(f"\n  [已迁移跳过] ({len(skipped_items)} 项)")
+            for item in skipped_items[:10]:
+                print(f"    ○ [{item.item_type.value}] {item.record_id} "
+                      f"{item.field_name}: 已处理")
+            if len(skipped_items) > 10:
+                print(f"    ... 还有 {len(skipped_items) - 10} 项")
+
+    plan_output = args.plan_output
+    plan_format = args.plan_format
+    if plan_output or plan_format:
+        plan_format = plan_format or "json"
+        if not plan_output:
+            plan_output = f"migration_plan.{plan_format}"
+        if plan_format == "json":
+            export_plan_json(plan, plan_output)
+            print(f"\n  迁移计划已导出 JSON: {plan_output}")
+        elif plan_format == "csv":
+            export_plan_csv(plan, plan_output)
+            print(f"\n  迁移计划已导出 CSV: {plan_output}")
+
+    if dry_run:
+        print(f"\n{'='*60}")
+        print("  预览完成。使用 --confirm 参数实际执行迁移")
+        print(f"{'='*60}")
+        return 0
+
+    migrated, stats = execute_migration(
+        plan, state, old_config_path, new_config, dry_run=False
+    )
+
+    print(f"\n{'='*20} 执行结果 {'='*20}")
+    print(f"  自动迁移成功: {stats['auto_migrated']} 项")
+    print(f"  冲突: {stats['conflicts']} 项")
+    print(f"  需人工处理: {stats['manual_required']} 项")
+    print(f"  跳过(已迁移): {stats['skipped']} 项")
+    print(f"  失败: {stats['failed']} 项")
+
+    result_output = args.result_output
+    result_format = args.result_format
+    if result_output or result_format:
+        result_format = result_format or "json"
+        if not result_output:
+            result_output = f"migration_result.{result_format}"
+        if result_format == "json":
+            export_result_json(migrated, stats, result_output)
+            print(f"\n  迁移结果已导出 JSON: {result_output}")
+        elif result_format == "csv":
+            export_result_csv(migrated, stats, result_output)
+            print(f"\n  迁移结果已导出 CSV: {result_output}")
+
+    if stats["conflicts"] > 0 or stats["manual_required"] > 0:
+        print(f"\n{'='*60}")
+        print("  ⚠ 存在冲突或需人工处理的项，请检查后手动处理")
+        print(f"{'='*60}")
+        return 1
+
+    print(f"\n{'='*60}")
+    print("✓ 配置迁移完成")
+    print(f"{'='*60}")
+    return 0
+
+
 def _print_result(result: dict) -> None:
     for key, value in result.items():
         if key == "details":
@@ -537,6 +693,39 @@ def build_parser() -> argparse.ArgumentParser:
     )
     p_report.add_argument("--output", help="报告导出路径")
 
+    p_migrate = sub.add_parser("migrate", help="配置版本迁移:检查状态记录与新旧配置差异")
+    p_migrate.add_argument(
+        "--old-config",
+        required=True,
+        help="旧配置文件路径",
+    )
+    p_migrate.add_argument(
+        "--confirm",
+        action="store_true",
+        default=False,
+        help="确认实际执行迁移 (默认 dry-run 预览)",
+    )
+    p_migrate.add_argument(
+        "--plan-format",
+        choices=["json", "csv"],
+        default=None,
+        help="迁移计划导出格式 (不指定则不导出文件)",
+    )
+    p_migrate.add_argument(
+        "--plan-output",
+        help="迁移计划导出路径",
+    )
+    p_migrate.add_argument(
+        "--result-format",
+        choices=["json", "csv"],
+        default=None,
+        help="迁移结果导出格式 (不指定则不导出文件)",
+    )
+    p_migrate.add_argument(
+        "--result-output",
+        help="迁移结果导出路径",
+    )
+
     return parser
 
 
@@ -560,6 +749,7 @@ def main(argv: list[str] | None = None) -> int:
         "healthcheck": cmd_healthcheck,
         "heal": cmd_heal,
         "report": cmd_report,
+        "migrate": cmd_migrate,
     }
 
     handler = dispatch.get(args.command)

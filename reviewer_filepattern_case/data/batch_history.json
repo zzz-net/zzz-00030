@@ -1,0 +1,16 @@
+[
+  {
+    "batch_id": "cbaad324",
+    "created_at": "2026-06-12T08:33:49.075469",
+    "operator": "reviewer",
+    "status": "completed",
+    "total": 1,
+    "succeeded": 1,
+    "failed": 0,
+    "action_ids": [
+      "32f121857f4e"
+    ],
+    "error_file_paths": [],
+    "error_details": {}
+  }
+]
