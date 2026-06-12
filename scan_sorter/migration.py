@@ -38,6 +38,7 @@ class ConflictType(Enum):
     PATH_NOT_EXIST = "path_not_exist"
     OPERATOR_MISMATCH = "operator_mismatch"
     STRUCTURE_CHANGE = "structure_change"
+    FILE_PATTERN_MISMATCH = "file_pattern_mismatch"
 
 
 @dataclass
@@ -255,6 +256,73 @@ def _check_target_conflict(new_path: str, diff: ConfigDiff) -> tuple[bool, Optio
         return True, ConflictType.TARGET_FILE_EXISTS, f"目标文件已存在: {new_path}"
 
 
+def _matches_file_pattern(filename: str, pattern: str) -> bool:
+    try:
+        return re.match(pattern, filename) is not None
+    except re.error:
+        return False
+
+
+def _analyze_file_pattern_item(
+    filename: str,
+    diff: ConfigDiff,
+    item_type: MigrationItemType,
+    record_id: str,
+    state: MigrationState,
+) -> Optional[MigrationItem]:
+    if not diff.file_pattern_changed or not filename:
+        return None
+
+    old_match = _matches_file_pattern(filename, diff.old_file_pattern)
+    new_match = _matches_file_pattern(filename, diff.new_file_pattern)
+
+    if old_match == new_match:
+        return None
+
+    fingerprint = compute_fingerprint(
+        item_type.value, record_id, "file_pattern_match", filename
+    )
+
+    if state.is_migrated(fingerprint):
+        return MigrationItem(
+            item_type=item_type,
+            record_id=record_id,
+            field_name="file_pattern_match",
+            old_value="匹配" if old_match else "不匹配",
+            new_value="匹配" if new_match else "不匹配",
+            action=MigrationAction.SKIPPED,
+            fingerprint=fingerprint,
+            migrated=True,
+        )
+
+    if old_match and not new_match:
+        return MigrationItem(
+            item_type=item_type,
+            record_id=record_id,
+            field_name="file_pattern_match",
+            old_value="匹配",
+            new_value="不匹配",
+            action=MigrationAction.MANUAL,
+            conflict_type=ConflictType.FILE_PATTERN_MISMATCH,
+            conflict_detail=f"文件名 {filename} 匹配旧规则但不匹配新规则，升级后将被视为非法",
+            fingerprint=fingerprint,
+        )
+
+    if not old_match and new_match:
+        return MigrationItem(
+            item_type=item_type,
+            record_id=record_id,
+            field_name="file_pattern_match",
+            old_value="不匹配",
+            new_value="匹配",
+            action=MigrationAction.AUTO_MIGRATE,
+            conflict_detail=f"文件名 {filename} 之前不匹配旧规则，现在匹配新规则，已被纳入规范",
+            fingerprint=fingerprint,
+        )
+
+    return None
+
+
 def analyze_queue(
     diff: ConfigDiff,
     old_config: AppConfig,
@@ -349,6 +417,16 @@ def analyze_queue(
                         action=MigrationAction.AUTO_MIGRATE,
                         fingerprint=fp,
                     ))
+
+        fp_item = _analyze_file_pattern_item(
+            entry.get("filename", ""),
+            diff,
+            MigrationItemType.QUEUE,
+            record_id,
+            state,
+        )
+        if fp_item:
+            items.append(fp_item)
 
     return items
 
@@ -445,6 +523,16 @@ def analyze_error_queue(
                         action=MigrationAction.AUTO_MIGRATE,
                         fingerprint=fp,
                     ))
+
+        fp_item = _analyze_file_pattern_item(
+            item.filename or "",
+            diff,
+            MigrationItemType.ERROR_QUEUE,
+            record_id,
+            state,
+        )
+        if fp_item:
+            items.append(fp_item)
 
     return items
 
@@ -650,6 +738,17 @@ def analyze_action_log(
                         action=MigrationAction.AUTO_MIGRATE,
                         fingerprint=fp,
                     ))
+
+        filename = os.path.basename(record.source) if record.source else ""
+        fp_item = _analyze_file_pattern_item(
+            filename,
+            diff,
+            MigrationItemType.ACTION_LOG,
+            record_id,
+            state,
+        )
+        if fp_item:
+            items.append(fp_item)
 
     return items
 

@@ -587,6 +587,231 @@ def test_scenario_5_post_migration_operations() -> None:
     print("\n  ✓ 迁移后 process/retry/report 测试通过")
 
 
+FP_CONFIG_V1 = os.path.join(TEST_ROOT, "fp_config_v1.yaml")
+FP_CONFIG_V2 = os.path.join(TEST_ROOT, "fp_config_v2.yaml")
+FP_PLAN_JSON = os.path.join(TEST_ROOT, "fp_plan.json")
+FP_DATA_DIR = os.path.join(TEST_ROOT, "fp_data")
+FP_INTAKE = os.path.join(TEST_ROOT, "fp_intake")
+FP_TARGET = os.path.join(TEST_ROOT, "fp_target")
+
+
+def write_fp_config_v1() -> None:
+    cfg = f"""intake_dir: {FP_INTAKE}
+target_base: {FP_TARGET}
+operator: same_operator
+
+rules:
+  case_number_pattern: "(\\\\d{{4}}-[A-Z]\\\\d{{3}})"
+  file_pattern: "(\\\\d{{4}}-[A-Z]\\\\d{{3}}-\\\\d{{3}})\\\\.(pdf|jpg|jpeg|png|tiff|bmp)$"
+  allowed_extensions:
+    - .pdf
+    - .jpg
+    - .jpeg
+    - .png
+    - .tiff
+    - .bmp
+  illegal_name_patterns: []
+  target_structure: "{{case_number}}"
+  action: move
+
+batch:
+  max_size: 50
+  stop_on_failure_ratio: 0.5
+
+logging:
+  dir: {FP_DATA_DIR}
+  action_log: action_log.jsonl
+  queue_file: queue.json
+  error_queue_file: error_queue.json
+  batch_history_file: batch_history.json
+
+watch:
+  poll_interval: 5
+"""
+    with open(FP_CONFIG_V1, "w", encoding="utf-8") as f:
+        f.write(cfg)
+
+
+def write_fp_config_v2() -> None:
+    cfg = f"""intake_dir: {FP_INTAKE}
+target_base: {FP_TARGET}
+operator: same_operator
+
+rules:
+  case_number_pattern: "(\\\\d{{4}}-[A-Z]\\\\d{{3}})"
+  file_pattern: "(DOC-\\\\d{{4}}-[A-Z]\\\\d{{3}}-\\\\d{{3}})\\\\.(pdf|jpg|jpeg|png|tiff|bmp)$"
+  allowed_extensions:
+    - .pdf
+    - .jpg
+    - .jpeg
+    - .png
+    - .tiff
+    - .bmp
+  illegal_name_patterns: []
+  target_structure: "{{case_number}}"
+  action: move
+
+batch:
+  max_size: 50
+  stop_on_failure_ratio: 0.5
+
+logging:
+  dir: {FP_DATA_DIR}
+  action_log: action_log.jsonl
+  queue_file: queue.json
+  error_queue_file: error_queue.json
+  batch_history_file: batch_history.json
+
+watch:
+  poll_interval: 5
+"""
+    with open(FP_CONFIG_V2, "w", encoding="utf-8") as f:
+        f.write(cfg)
+
+
+def test_scenario_6_file_pattern_migration() -> None:
+    """测试场景6: 文件名规则变更迁移"""
+    print("\n" + "=" * 60)
+    print("测试场景6: 文件名规则变更迁移")
+    print("=" * 60)
+
+    reset_test_dirs()
+    os.makedirs(FP_INTAKE, exist_ok=True)
+    os.makedirs(FP_TARGET, exist_ok=True)
+    os.makedirs(FP_DATA_DIR, exist_ok=True)
+    write_fp_config_v1()
+    write_fp_config_v2()
+
+    test_files = [
+        ("2024-A001-001.pdf", b"%PDF-1.4 test content"),
+        ("2024-A001-002.pdf", b"%PDF-1.4 test content"),
+        ("2024-B002-001.jpg", b"\xff\xd8\xff\xe0 test content"),
+        ("DOC-2025-C003-001.pdf", b"%PDF-1.4 both match"),
+    ]
+    for filename, content in test_files:
+        with open(os.path.join(FP_INTAKE, filename), "wb") as f:
+            f.write(content)
+
+    code, out, err = run_cli(["-c", FP_CONFIG_V1, "process"])
+    assert_equal(code, 0, "v1 配置 process 成功")
+
+    with open(os.path.join(FP_DATA_DIR, "action_log.jsonl"), "r", encoding="utf-8") as f:
+        actions = [json.loads(line) for line in f if line.strip()]
+    assert_equal(len(actions), 4, "v1 process 产生 4 条 action_log")
+    action_filenames = [os.path.basename(a["source"]) for a in actions]
+    assert_in("2024-A001-001.pdf", str(action_filenames), "action_log 包含 v1 合法文件")
+    assert_in("DOC-2025-C003-001.pdf", str(action_filenames), "action_log 包含 DOC- 前缀文件")
+
+    queue_data = [
+        {
+            "path": os.path.join(FP_INTAKE, "2024-A001-998.pdf"),
+            "filename": "2024-A001-998.pdf",
+            "case_number": "2024-A001",
+            "size": 1024,
+            "timestamp": "2024-01-01T00:00:00",
+        },
+        {
+            "path": os.path.join(FP_INTAKE, "DOC-2025-D004-001.pdf"),
+            "filename": "DOC-2025-D004-001.pdf",
+            "case_number": "2025-D004",
+            "size": 2048,
+            "timestamp": "2024-01-01T00:00:00",
+        },
+    ]
+    with open(os.path.join(FP_DATA_DIR, "queue.json"), "w", encoding="utf-8") as f:
+        json.dump(queue_data, f, ensure_ascii=False, indent=2)
+
+    error_data = [
+        {
+            "path": os.path.join(FP_INTAKE, "2024-B002-999.pdf"),
+            "filename": "2024-B002-999.pdf",
+            "case_number": "2024-B002",
+            "error": "ERR_ILLEGAL_NAME: 模拟错误",
+            "retry_count": 0,
+            "max_retries": 3,
+            "added_at": "2024-01-01T00:00:00",
+            "last_retry_at": None,
+            "batch_id": "test_batch_1",
+        },
+        {
+            "path": os.path.join(FP_INTAKE, "DOC-2025-E005-001.jpg"),
+            "filename": "DOC-2025-E005-001.jpg",
+            "case_number": "2025-E005",
+            "error": "ERR_COPY_FAILED: 模拟复制失败",
+            "retry_count": 1,
+            "max_retries": 3,
+            "added_at": "2024-01-01T00:00:00",
+            "last_retry_at": "2024-01-01T00:00:00",
+            "batch_id": "test_batch_1",
+        },
+    ]
+    with open(os.path.join(FP_DATA_DIR, "error_queue.json"), "w", encoding="utf-8") as f:
+        json.dump(error_data, f, ensure_ascii=False, indent=2)
+
+    code, out, err = run_cli([
+        "-c", FP_CONFIG_V2, "migrate",
+        "--old-config", FP_CONFIG_V1,
+        "--plan-format", "json",
+        "--plan-output", FP_PLAN_JSON,
+    ])
+    assert_equal(code, 0, "migrate dry-run 成功")
+    assert_in("文件名规则:", out, "控制台输出包含 文件名规则 差异")
+    assert_in("需人工处理:", out, "控制台输出包含 需人工处理 计数")
+
+    assert os.path.exists(FP_PLAN_JSON), "迁移计划 JSON 已导出"
+    with open(FP_PLAN_JSON, "r", encoding="utf-8") as f:
+        plan_data = json.load(f)
+
+    summary = plan_data["summary"]
+    assert_equal(summary["total_items"] > 0, True,
+                 f"计划总项数 > 0, 实际: {summary['total_items']}")
+    assert_equal(summary["config_changes"]["file_pattern"]["old"]
+                 != summary["config_changes"]["file_pattern"]["new"],
+                 True, "配置差异中记录了 file_pattern 变更")
+    assert_equal(summary["manual_required"] >= 1, True,
+                 "摘要 manual_required 计数 > 0")
+    assert_equal(summary["auto_migrate"] >= 1, True,
+                 "摘要 auto_migrate 计数 > 0")
+
+    items = plan_data["items"]
+
+    queue_fp_items = [i for i in items
+                      if i["item_type"] == "queue" and i["field_name"] == "file_pattern_match"]
+    assert_equal(len(queue_fp_items) >= 1, True,
+                 "queue 中有至少 1 个 file_pattern_match 项")
+    queue_manual = [i for i in queue_fp_items if i["action"] == "manual"]
+    queue_auto = [i for i in queue_fp_items if i["action"] == "auto_migrate"]
+    assert_equal(len(queue_manual) >= 1, True,
+                 "queue 中有至少 1 个 manual 项（旧匹配新不匹配）")
+    assert_equal(len(queue_auto) >= 1, True,
+                 "queue 中有至少 1 个 auto_migrate 项（旧不匹配新匹配）")
+
+    err_fp_items = [i for i in items
+                    if i["item_type"] == "error_queue" and i["field_name"] == "file_pattern_match"]
+    assert_equal(len(err_fp_items) >= 1, True,
+                 "error_queue 中有至少 1 个 file_pattern_match 项")
+
+    action_fp_items = [i for i in items
+                       if i["item_type"] == "action_log" and i["field_name"] == "file_pattern_match"]
+    assert_equal(len(action_fp_items) >= 1, True,
+                 "action_log 中有至少 1 个 file_pattern_match 项")
+
+    all_fp_items = queue_fp_items + err_fp_items + action_fp_items
+    for fp_item in all_fp_items:
+        if fp_item["action"] == "manual":
+            assert_equal(fp_item.get("conflict_type"), "file_pattern_mismatch",
+                         f"manual 项标记 file_pattern_mismatch: {fp_item['record_id']}")
+            assert_in("匹配旧规则但不匹配新规则", fp_item.get("conflict_detail", ""),
+                      "manual 项有说明原因的 conflict_detail")
+
+    if summary["manual_required"] > 0:
+        assert_in("[需人工处理]", out, "控制台有 [需人工处理] 区块提示")
+    if summary["auto_migrate"] > 0:
+        assert_in("[可自动迁移]", out, "控制台有 [可自动迁移] 区块提示")
+
+    print("\n  ✓ 文件名规则变更迁移测试通过")
+
+
 def main() -> int:
     print("=" * 60)
     print("scan-sorter 配置版本迁移 回归测试")
@@ -598,6 +823,7 @@ def main() -> int:
         test_scenario_3_export,
         test_scenario_4_idempotency,
         test_scenario_5_post_migration_operations,
+        test_scenario_6_file_pattern_migration,
     ]
 
     passed = 0

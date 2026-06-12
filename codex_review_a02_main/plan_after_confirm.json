@@ -1,0 +1,126 @@
+{
+  "summary": {
+    "generated_at": "2026-06-12T09:42:45.682863",
+    "config_changes": {
+      "intake_dir": {
+        "old": "D:\\workSpace\\AI__SPACE\\zzz-00030\\codex_review_a02_main\\intake",
+        "new": "D:\\workSpace\\AI__SPACE\\zzz-00030\\codex_review_a02_main\\intake"
+      },
+      "target_base": {
+        "old": "D:\\workSpace\\AI__SPACE\\zzz-00030\\codex_review_a02_main\\target",
+        "new": "D:\\workSpace\\AI__SPACE\\zzz-00030\\codex_review_a02_main\\target"
+      },
+      "operator": {
+        "old": "reviewer",
+        "new": "reviewer"
+      },
+      "case_number_pattern": {
+        "old": "(\\d{4}-[A-Z]\\d{3})",
+        "new": "(\\d{4}-[A-Z]\\d{3})"
+      },
+      "file_pattern": {
+        "old": "(\\d{4}-[A-Z]\\d{3}-\\d{3})\\.(pdf|jpg|jpeg|png|tiff|bmp)$",
+        "new": "(DOC-\\d{4}-[A-Z]\\d{3}-\\d{3})\\.(pdf|jpg|jpeg|png|tiff|bmp)$"
+      },
+      "target_structure": {
+        "old": "{case_number}",
+        "new": "{case_number}"
+      },
+      "action": {
+        "old": "move",
+        "new": "move"
+      }
+    },
+    "total_items": 7,
+    "auto_migrate": 0,
+    "conflicts": 0,
+    "manual_required": 4,
+    "skipped": 3
+  },
+  "items": [
+    {
+      "item_type": "queue",
+      "record_id": "queue_0",
+      "field_name": "file_pattern_match",
+      "old_value": "匹配",
+      "new_value": "不匹配",
+      "action": "manual",
+      "conflict_type": "file_pattern_mismatch",
+      "conflict_detail": "文件名 2024-A001-998.pdf 匹配旧规则但不匹配新规则，升级后将被视为非法",
+      "fingerprint": "ea608f9f18b6189f",
+      "migrated": false
+    },
+    {
+      "item_type": "queue",
+      "record_id": "queue_1",
+      "field_name": "file_pattern_match",
+      "old_value": "不匹配",
+      "new_value": "匹配",
+      "action": "skipped",
+      "conflict_type": null,
+      "conflict_detail": null,
+      "fingerprint": "06fd25bf63385a24",
+      "migrated": true
+    },
+    {
+      "item_type": "error_queue",
+      "record_id": "error_0",
+      "field_name": "file_pattern_match",
+      "old_value": "匹配",
+      "new_value": "不匹配",
+      "action": "manual",
+      "conflict_type": "file_pattern_mismatch",
+      "conflict_detail": "文件名 2024-B002-999.pdf 匹配旧规则但不匹配新规则，升级后将被视为非法",
+      "fingerprint": "a3671e8a6251b50f",
+      "migrated": false
+    },
+    {
+      "item_type": "error_queue",
+      "record_id": "error_1",
+      "field_name": "file_pattern_match",
+      "old_value": "不匹配",
+      "new_value": "匹配",
+      "action": "skipped",
+      "conflict_type": null,
+      "conflict_detail": null,
+      "fingerprint": "ca7cb3a1659ade4a",
+      "migrated": true
+    },
+    {
+      "item_type": "action_log",
+      "record_id": "068c7b8d9995",
+      "field_name": "file_pattern_match",
+      "old_value": "匹配",
+      "new_value": "不匹配",
+      "action": "manual",
+      "conflict_type": "file_pattern_mismatch",
+      "conflict_detail": "文件名 2024-A001-001.pdf 匹配旧规则但不匹配新规则，升级后将被视为非法",
+      "fingerprint": "31cfd787eb9bebba",
+      "migrated": false
+    },
+    {
+      "item_type": "action_log",
+      "record_id": "346682b88276",
+      "field_name": "file_pattern_match",
+      "old_value": "匹配",
+      "new_value": "不匹配",
+      "action": "manual",
+      "conflict_type": "file_pattern_mismatch",
+      "conflict_detail": "文件名 2024-B002-001.jpg 匹配旧规则但不匹配新规则，升级后将被视为非法",
+      "fingerprint": "c1ed9b66024bcd9c",
+      "migrated": false
+    },
+    {
+      "item_type": "action_log",
+      "record_id": "5400bb3e9c29",
+      "field_name": "file_pattern_match",
+      "old_value": "不匹配",
+      "new_value": "匹配",
+      "action": "skipped",
+      "conflict_type": null,
+      "conflict_detail": null,
+      "fingerprint": "77034e317927b2fa",
+      "migrated": true
+    }
+  ]
+}

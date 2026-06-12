@@ -1,0 +1,18 @@
+[
+  {
+    "batch_id": "64a3729c",
+    "created_at": "2026-06-12T09:42:08.099826",
+    "operator": "reviewer",
+    "status": "completed",
+    "total": 3,
+    "succeeded": 3,
+    "failed": 0,
+    "action_ids": [
+      "068c7b8d9995",
+      "346682b88276",
+      "5400bb3e9c29"
+    ],
+    "error_file_paths": [],
+    "error_details": {}
+  }
+]

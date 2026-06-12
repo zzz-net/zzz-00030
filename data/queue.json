@@ -1,62 +1,110 @@
 [
   {
     "path": "D:\\workSpace\\AI__SPACE\\zzz-00030\\samples\\intake\\2024-A001-001.pdf",
-    "case_number": "2024-A001",
+    "case_number": "2024-A001-001",
     "status": "done",
     "filename": "2024-A001-001.pdf"
   },
   {
     "path": "D:\\workSpace\\AI__SPACE\\zzz-00030\\samples\\intake\\2024-A001-002.pdf",
-    "case_number": "2024-A001",
+    "case_number": "2024-A001-002",
     "status": "done",
     "filename": "2024-A001-002.pdf"
   },
   {
     "path": "D:\\workSpace\\AI__SPACE\\zzz-00030\\samples\\intake\\2024-A001-003.png",
-    "case_number": "2024-A001",
+    "case_number": "2024-A001-003",
     "status": "done",
     "filename": "2024-A001-003.png"
   },
   {
     "path": "D:\\workSpace\\AI__SPACE\\zzz-00030\\samples\\intake\\2024-B002-001.jpg",
-    "case_number": "2024-B002",
+    "case_number": "2024-B002-001",
     "status": "done",
     "filename": "2024-B002-001.jpg"
   },
   {
     "path": "D:\\workSpace\\AI__SPACE\\zzz-00030\\samples\\intake\\2024-B002-002.jpg",
-    "case_number": "2024-B002",
+    "case_number": "2024-B002-002",
     "status": "done",
     "filename": "2024-B002-002.jpg"
   },
   {
     "path": "D:\\workSpace\\AI__SPACE\\zzz-00030\\samples\\intake\\2025-C003-001.tiff",
-    "case_number": "2025-C003",
+    "case_number": "2025-C003-001",
     "status": "done",
     "filename": "2025-C003-001.tiff"
   },
   {
     "path": "D:\\workSpace\\AI__SPACE\\zzz-00030\\samples\\intake\\bad file#name.pdf",
     "case_number": null,
-    "status": "queued",
+    "status": "failed",
     "filename": "bad file#name.pdf"
   },
   {
     "path": "D:\\workSpace\\AI__SPACE\\zzz-00030\\samples\\intake\\unparseable_document.pdf",
     "case_number": null,
-    "status": "queued",
+    "status": "failed",
     "filename": "unparseable_document.pdf"
   },
   {
     "path": "D:\\workSpace\\AI__SPACE\\zzz-00030\\samples\\intake\\bad file#name.pdf",
     "case_number": null,
-    "status": "queued",
+    "status": "failed",
     "filename": "bad file#name.pdf"
   },
   {
     "path": "D:\\workSpace\\AI__SPACE\\zzz-00030\\samples\\intake\\unparseable_document.pdf",
     "case_number": null,
-    "status": "queued",
+    "status": "failed",
+    "filename": "unparseable_document.pdf"
+  },
+  {
+    "path": "D:\\workSpace\\AI__SPACE\\zzz-00030\\samples\\intake\\bad file#name.pdf",
+    "case_number": null,
+    "status": "failed",
+    "filename": "bad file#name.pdf"
+  },
+  {
+    "path": "D:\\workSpace\\AI__SPACE\\zzz-00030\\samples\\intake\\unparseable_document.pdf",
+    "case_number": null,
+    "status": "failed",
+    "filename": "unparseable_document.pdf"
+  },
+  {
+    "path": "D:\\workSpace\\AI__SPACE\\zzz-00030\\samples\\intake\\bad file#name.pdf",
+    "case_number": null,
+    "status": "failed",
+    "filename": "bad file#name.pdf"
+  },
+  {
+    "path": "D:\\workSpace\\AI__SPACE\\zzz-00030\\samples\\intake\\unparseable_document.pdf",
+    "case_number": null,
+    "status": "failed",
+    "filename": "unparseable_document.pdf"
+  },
+  {
+    "path": "D:\\workSpace\\AI__SPACE\\zzz-00030\\samples\\intake\\bad file#name.pdf",
+    "case_number": null,
+    "status": "failed",
+    "filename": "bad file#name.pdf"
+  },
+  {
+    "path": "D:\\workSpace\\AI__SPACE\\zzz-00030\\samples\\intake\\unparseable_document.pdf",
+    "case_number": null,
+    "status": "failed",
+    "filename": "unparseable_document.pdf"
+  },
+  {
+    "path": "D:\\workSpace\\AI__SPACE\\zzz-00030\\samples\\intake\\bad file#name.pdf",
+    "case_number": null,
+    "status": "failed",
+    "filename": "bad file#name.pdf"
+  },
+  {
+    "path": "D:\\workSpace\\AI__SPACE\\zzz-00030\\samples\\intake\\unparseable_document.pdf",
+    "case_number": null,
+    "status": "failed",
     "filename": "unparseable_document.pdf"
   }
 ]

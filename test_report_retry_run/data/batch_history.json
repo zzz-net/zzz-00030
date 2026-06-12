@@ -1,15 +1,15 @@
 [
   {
-    "batch_id": "e7f50822",
-    "created_at": "2026-06-12T08:28:03.796977",
+    "batch_id": "60e8a021",
+    "created_at": "2026-06-12T09:27:02.268109",
     "operator": "tester",
     "status": "partial_failed",
     "total": 4,
     "succeeded": 2,
     "failed": 2,
     "action_ids": [
-      "a50ebbb1b099",
-      "253a273a233c"
+      "74188d88b476",
+      "822d05288d81"
     ],
     "error_file_paths": [
       "D:\\workSpace\\AI__SPACE\\zzz-00030\\test_report_retry_run\\intake\\2024-A001-003.pdf",

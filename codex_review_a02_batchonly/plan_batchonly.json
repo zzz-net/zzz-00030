@@ -1,0 +1,41 @@
+{
+  "summary": {
+    "generated_at": "2026-06-12T09:43:38.256882",
+    "config_changes": {
+      "intake_dir": {
+        "old": "D:\\workSpace\\AI__SPACE\\zzz-00030\\codex_review_a02_batchonly\\intake",
+        "new": "D:\\workSpace\\AI__SPACE\\zzz-00030\\codex_review_a02_batchonly\\intake"
+      },
+      "target_base": {
+        "old": "D:\\workSpace\\AI__SPACE\\zzz-00030\\codex_review_a02_batchonly\\target",
+        "new": "D:\\workSpace\\AI__SPACE\\zzz-00030\\codex_review_a02_batchonly\\target"
+      },
+      "operator": {
+        "old": "reviewer",
+        "new": "reviewer"
+      },
+      "case_number_pattern": {
+        "old": "(\\d{4}-[A-Z]\\d{3})",
+        "new": "(\\d{4}-[A-Z]\\d{3})"
+      },
+      "file_pattern": {
+        "old": "(\\d{4}-[A-Z]\\d{3}-\\d{3})\\.(pdf|jpg|jpeg|png|tiff|bmp)$",
+        "new": "(DOC-\\d{4}-[A-Z]\\d{3}-\\d{3})\\.(pdf|jpg|jpeg|png|tiff|bmp)$"
+      },
+      "target_structure": {
+        "old": "{case_number}",
+        "new": "{case_number}"
+      },
+      "action": {
+        "old": "move",
+        "new": "move"
+      }
+    },
+    "total_items": 0,
+    "auto_migrate": 0,
+    "conflicts": 0,
+    "manual_required": 0,
+    "skipped": 0
+  },
+  "items": []
+}

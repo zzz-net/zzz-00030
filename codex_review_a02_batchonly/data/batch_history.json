@@ -1,0 +1,20 @@
+[
+{
+  "batch_id": "review_batch_1",
+  "action_ids": [],
+  "failed": 2,
+  "succeeded": 0,
+  "created_at": "2026-06-12T00:00:00",
+  "total": 2,
+  "status": "partial_failed",
+  "error_details": {
+    "D:\\workSpace\\AI__SPACE\\zzz-00030\\codex_review_a02_batchonly\\intake\\2024-Z001-001.pdf": "ERR_ILLEGAL_NAME: old match only",
+    "D:\\workSpace\\AI__SPACE\\zzz-00030\\codex_review_a02_batchonly\\intake\\DOC-2025-Z002-001.pdf": "ERR_ILLEGAL_NAME: new match only"
+  },
+  "operator": "reviewer",
+  "error_file_paths": [
+    "D:\\workSpace\\AI__SPACE\\zzz-00030\\codex_review_a02_batchonly\\intake\\2024-Z001-001.pdf",
+    "D:\\workSpace\\AI__SPACE\\zzz-00030\\codex_review_a02_batchonly\\intake\\DOC-2025-Z002-001.pdf"
+  ]
+}
+]
