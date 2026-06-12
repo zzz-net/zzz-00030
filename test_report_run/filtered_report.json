@@ -1,9 +1,9 @@
 {
   "batches": [
     {
-      "batch_id": "d298721d",
+      "batch_id": "f910b13b",
       "status": "partial_failed",
-      "created_at": "2026-06-12T10:10:10.994074",
+      "created_at": "2026-06-12T12:03:40.873017",
       "operator": "report_test_op",
       "total": 5,
       "succeeded": 2,
@@ -19,28 +19,28 @@
           "source": "D:\\workSpace\\AI__SPACE\\zzz-00030\\test_report_run\\intake\\2024-A001-001.pdf",
           "destination": "D:\\workSpace\\AI__SPACE\\zzz-00030\\test_report_run\\target\\2024-A001\\2024-A001-001.pdf",
           "case_number": "2024-A001",
-          "timestamp": "2026-06-12T10:10:10.998534"
+          "timestamp": "2026-06-12T12:03:40.876432"
         },
         {
           "filename": "2024-B002-001.pdf",
           "source": "D:\\workSpace\\AI__SPACE\\zzz-00030\\test_report_run\\intake\\2024-B002-001.pdf",
           "destination": "D:\\workSpace\\AI__SPACE\\zzz-00030\\test_report_run\\target\\2024-B002\\2024-B002-001.pdf",
           "case_number": "2024-B002",
-          "timestamp": "2026-06-12T10:10:11.001037"
+          "timestamp": "2026-06-12T12:03:40.878388"
         },
         {
           "filename": "2024-A001-002.pdf",
           "source": "D:\\workSpace\\AI__SPACE\\zzz-00030\\test_report_run\\intake\\2024-A001-002.pdf",
           "destination": "D:\\workSpace\\AI__SPACE\\zzz-00030\\test_report_run\\target\\2024-A001\\2024-A001-002.pdf",
           "case_number": "2024-A001",
-          "timestamp": "2026-06-12T10:10:11.270478"
+          "timestamp": "2026-06-12T12:03:41.240728"
         },
         {
           "filename": "2024-C003-001.pdf",
           "source": "D:\\workSpace\\AI__SPACE\\zzz-00030\\test_report_run\\intake\\2024-C003-001.pdf",
           "destination": "D:\\workSpace\\AI__SPACE\\zzz-00030\\test_report_run\\target\\2024-C003\\2024-C003-001.pdf",
           "case_number": "2024-C003",
-          "timestamp": "2026-06-12T10:10:11.274382"
+          "timestamp": "2026-06-12T12:03:41.250092"
         }
       ],
       "failed_files": [
@@ -88,11 +88,11 @@
       "retry_count": 0,
       "max_retries": 3,
       "case_number": null,
-      "batch_id": "26b8c398"
+      "batch_id": "52091957"
     }
   ],
   "healthcheck_summary": {
-    "last_check_time": "2026-06-12T10:10:11.438422",
+    "last_check_time": "2026-06-12T12:03:41.547766",
     "total_findings": 2,
     "critical_count": 0,
     "warning_count": 2,
@@ -113,5 +113,5 @@
     "最近一次健康检查发现 2 个问题"
   ],
   "errors": [],
-  "generated_at": "2026-06-12T10:10:11.579542"
+  "generated_at": "2026-06-12T12:03:41.700631"
 }

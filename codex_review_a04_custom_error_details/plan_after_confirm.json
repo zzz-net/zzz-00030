@@ -1,0 +1,78 @@
+{
+  "summary": {
+    "generated_at": "2026-06-12T12:10:47.456688",
+    "config_changes": {
+      "intake_dir": {
+        "old": "D:\\workSpace\\AI__SPACE\\zzz-00030\\codex_review_a04_custom_error_details\\intake",
+        "new": "D:\\workSpace\\AI__SPACE\\zzz-00030\\codex_review_a04_custom_error_details\\intake"
+      },
+      "target_base": {
+        "old": "D:\\workSpace\\AI__SPACE\\zzz-00030\\codex_review_a04_custom_error_details\\target",
+        "new": "D:\\workSpace\\AI__SPACE\\zzz-00030\\codex_review_a04_custom_error_details\\target"
+      },
+      "operator": {
+        "old": "same_op",
+        "new": "same_op"
+      },
+      "case_number_pattern": {
+        "old": "(\\d{4}-[A-Z]\\d{3})",
+        "new": "(\\d{4}-[A-Z]\\d{3})"
+      },
+      "file_pattern": {
+        "old": "(\\d{4}-[A-Z]\\d{3}-\\d{3})\\.(pdf|jpg|jpeg|png|tiff|bmp)$",
+        "new": "(DETAIL-\\d{4}-[A-Z]\\d{3}-\\d{3})\\.(pdf|jpg|jpeg|png|tiff|bmp)$"
+      },
+      "target_structure": {
+        "old": "{case_number}",
+        "new": "{case_number}"
+      },
+      "action": {
+        "old": "move",
+        "new": "move"
+      }
+    },
+    "total_items": 3,
+    "auto_migrate": 0,
+    "conflicts": 0,
+    "manual_required": 2,
+    "skipped": 1
+  },
+  "items": [
+    {
+      "item_type": "batch_history",
+      "record_id": "batch_detail_custom",
+      "field_name": "error_detail_0_pattern_match",
+      "old_value": "匹配",
+      "new_value": "不匹配",
+      "action": "manual",
+      "conflict_type": "file_pattern_mismatch",
+      "conflict_detail": "文件名 2024-A001-001.pdf 匹配旧规则但不匹配新规则，升级后将被视为非法",
+      "fingerprint": "5ceb464a9aeee15b",
+      "migrated": false
+    },
+    {
+      "item_type": "batch_history",
+      "record_id": "batch_detail_custom",
+      "field_name": "error_detail_1_pattern_match",
+      "old_value": "匹配",
+      "new_value": "不匹配",
+      "action": "manual",
+      "conflict_type": "file_pattern_mismatch",
+      "conflict_detail": "文件名 2024-B002-001.jpg 匹配旧规则但不匹配新规则，升级后将被视为非法",
+      "fingerprint": "56f66750cd804607",
+      "migrated": false
+    },
+    {
+      "item_type": "batch_history",
+      "record_id": "batch_detail_custom",
+      "field_name": "error_detail_2_pattern_match",
+      "old_value": "不匹配",
+      "new_value": "匹配",
+      "action": "skipped",
+      "conflict_type": null,
+      "conflict_detail": null,
+      "fingerprint": "9f714f52b8fb2478",
+      "migrated": true
+    }
+  ]
+}

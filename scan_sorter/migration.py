@@ -575,8 +575,12 @@ def analyze_batch_history(
                     fingerprint=fp,
                 ))
 
+        seen_paths: set = set()
         for fidx, file_path in enumerate(batch.error_file_paths or []):
-            filename = os.path.basename(file_path) if file_path else ""
+            if not file_path or file_path in seen_paths:
+                continue
+            seen_paths.add(file_path)
+            filename = os.path.basename(file_path)
             fp_item = _analyze_file_pattern_item(
                 filename,
                 diff,
@@ -584,6 +588,22 @@ def analyze_batch_history(
                 record_id,
                 state,
                 field_name=f"error_file_{fidx}_pattern_match",
+            )
+            if fp_item:
+                items.append(fp_item)
+
+        for didx, (file_path, _detail) in enumerate((batch.error_details or {}).items()):
+            if not file_path or file_path in seen_paths:
+                continue
+            seen_paths.add(file_path)
+            filename = os.path.basename(file_path)
+            fp_item = _analyze_file_pattern_item(
+                filename,
+                diff,
+                MigrationItemType.BATCH_HISTORY,
+                record_id,
+                state,
+                field_name=f"error_detail_{didx}_pattern_match",
             )
             if fp_item:
                 items.append(fp_item)

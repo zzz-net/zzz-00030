@@ -1045,6 +1045,228 @@ def test_scenario_7_batch_history_file_pattern() -> None:
     print("\n  ✓ batch_history 文件引用迁移测试通过")
 
 
+BHED_CONFIG_V1 = os.path.join(TEST_ROOT, "bhed_config_v1.yaml")
+BHED_CONFIG_V2 = os.path.join(TEST_ROOT, "bhed_config_v2.yaml")
+BHED_PLAN_JSON = os.path.join(TEST_ROOT, "bhed_plan.json")
+BHED_DATA_DIR = os.path.join(TEST_ROOT, "bhed_data")
+BHED_INTAKE = os.path.join(TEST_ROOT, "bhed_intake")
+BHED_TARGET = os.path.join(TEST_ROOT, "bhed_target")
+
+
+def write_bhed_config_v1() -> None:
+    cfg = f"""intake_dir: {BHED_INTAKE}
+target_base: {BHED_TARGET}
+operator: same_op
+
+rules:
+  case_number_pattern: "(\\\\d{{4}}-[A-Z]\\\\d{{3}})"
+  file_pattern: "(\\\\d{{4}}-[A-Z]\\\\d{{3}}-\\\\d{{3}})\\\\.(pdf|jpg|jpeg|png|tiff|bmp)$"
+  allowed_extensions: [.pdf, .jpg, .jpeg, .png, .tiff, .bmp]
+  illegal_name_patterns: []
+  target_structure: "{{case_number}}"
+  action: move
+
+batch:
+  max_size: 50
+  stop_on_failure_ratio: 0.5
+
+logging:
+  dir: {BHED_DATA_DIR}
+  action_log: action_log.jsonl
+  queue_file: queue.json
+  error_queue_file: error_queue.json
+  batch_history_file: batch_history.json
+
+watch:
+  poll_interval: 5
+"""
+    with open(BHED_CONFIG_V1, "w", encoding="utf-8") as f:
+        f.write(cfg)
+
+
+def write_bhed_config_v2() -> None:
+    cfg = f"""intake_dir: {BHED_INTAKE}
+target_base: {BHED_TARGET}
+operator: same_op
+
+rules:
+  case_number_pattern: "(\\\\d{{4}}-[A-Z]\\\\d{{3}})"
+  file_pattern: "(DETAIL-\\\\d{{4}}-[A-Z]\\\\d{{3}}-\\\\d{{3}})\\\\.(pdf|jpg|jpeg|png|tiff|bmp)$"
+  allowed_extensions: [.pdf, .jpg, .jpeg, .png, .tiff, .bmp]
+  illegal_name_patterns: []
+  target_structure: "{{case_number}}"
+  action: move
+
+batch:
+  max_size: 50
+  stop_on_failure_ratio: 0.5
+
+logging:
+  dir: {BHED_DATA_DIR}
+  action_log: action_log.jsonl
+  queue_file: queue.json
+  error_queue_file: error_queue.json
+  batch_history_file: batch_history.json
+
+watch:
+  poll_interval: 5
+"""
+    with open(BHED_CONFIG_V2, "w", encoding="utf-8") as f:
+        f.write(cfg)
+
+
+def test_scenario_8_batch_history_error_details() -> None:
+    """测试场景8: batch_history error_details 路径的 file_pattern 迁移"""
+    print("\n" + "=" * 60)
+    print("测试场景8: batch_history error_details 路径的 file_pattern 迁移")
+    print("=" * 60)
+
+    reset_test_dirs()
+    os.makedirs(BHED_INTAKE, exist_ok=True)
+    os.makedirs(BHED_TARGET, exist_ok=True)
+    os.makedirs(BHED_DATA_DIR, exist_ok=True)
+    write_bhed_config_v1()
+    write_bhed_config_v2()
+
+    batch_data = [
+        {
+            "batch_id": "batch_detail_001",
+            "created_at": "2024-01-01T00:00:00",
+            "operator": "same_op",
+            "status": "partial_failed",
+            "total": 4,
+            "succeeded": 1,
+            "failed": 3,
+            "action_ids": ["a1"],
+            "error_file_paths": [],
+            "error_details": {
+                os.path.join(BHED_INTAKE, "2024-A001-001.pdf"): "ERR_ILLEGAL_NAME: detail 1",
+                os.path.join(BHED_INTAKE, "2024-B002-001.jpg"): "ERR_ILLEGAL_NAME: detail 2",
+                os.path.join(BHED_INTAKE, "DETAIL-2025-C003-001.pdf"): "ERR_ILLEGAL_NAME: detail 3",
+            },
+        }
+    ]
+    with open(os.path.join(BHED_DATA_DIR, "batch_history.json"), "w", encoding="utf-8") as f:
+        json.dump(batch_data, f, ensure_ascii=False, indent=2)
+
+    with open(os.path.join(BHED_DATA_DIR, "queue.json"), "w", encoding="utf-8") as f:
+        json.dump([], f)
+    with open(os.path.join(BHED_DATA_DIR, "error_queue.json"), "w", encoding="utf-8") as f:
+        json.dump([], f)
+    with open(os.path.join(BHED_DATA_DIR, "action_log.jsonl"), "w", encoding="utf-8") as f:
+        f.write("")
+
+    code, out, err = run_cli([
+        "-c", BHED_CONFIG_V2, "migrate",
+        "--old-config", BHED_CONFIG_V1,
+        "--plan-format", "json",
+        "--plan-output", BHED_PLAN_JSON,
+    ])
+    assert_equal(code, 0, "migrate dry-run 成功")
+    assert_in("文件名规则:", out, "控制台输出包含 文件名规则 差异")
+    assert_in("总计待处理:", out, "控制台输出包含总计待处理")
+
+    assert os.path.exists(BHED_PLAN_JSON), "迁移计划 JSON 已导出"
+    with open(BHED_PLAN_JSON, "r", encoding="utf-8") as f:
+        plan_data = json.load(f)
+
+    summary = plan_data["summary"]
+    assert_equal(summary["config_changes"]["file_pattern"]["old"]
+                 != summary["config_changes"]["file_pattern"]["new"],
+                 True, "配置差异中记录了 file_pattern 变更")
+
+    assert_equal(summary["total_items"] > 0, True,
+                 f"计划总项数 > 0, 实际: {summary['total_items']}")
+    assert_equal(summary["auto_migrate"] + summary["manual_required"]
+                 + summary["conflicts"] + summary["skipped"],
+                 summary["total_items"], "各分类计数之和等于总数")
+
+    items = plan_data["items"]
+
+    bh_fp_items = [i for i in items
+                   if i["item_type"] == "batch_history" and "pattern_match" in i["field_name"]]
+    assert_equal(len(bh_fp_items) >= 1, True,
+                 f"batch_history 中有至少 1 个 file_pattern 项，实际 {len(bh_fp_items)}")
+
+    detail_items = [i for i in bh_fp_items if "error_detail_" in i["field_name"]]
+    assert_equal(len(detail_items) >= 1, True,
+                 "有来自 error_details 的迁移项（不是 error_file_paths）")
+
+    bh_manual = [i for i in bh_fp_items if i["action"] == "manual"]
+    bh_auto = [i for i in bh_fp_items if i["action"] == "auto_migrate"]
+    assert_equal(len(bh_manual) >= 1, True,
+                 "有至少 1 个 manual 项（旧匹配新不匹配）")
+    assert_equal(len(bh_auto) >= 1, True,
+                 "有至少 1 个 auto_migrate 项（旧不匹配新匹配）")
+
+    for item in bh_manual:
+        assert_equal(item.get("conflict_type"), "file_pattern_mismatch",
+                     f"manual 项标记 file_pattern_mismatch: {item['record_id']}")
+        assert_in("匹配旧规则但不匹配新规则", item.get("conflict_detail", ""),
+                  "manual 项有说明原因")
+
+    only_bh = all(i["item_type"] == "batch_history" for i in items)
+    assert_equal(only_bh, True,
+                 "在只有 batch_history 数据时，所有项都来自 batch_history")
+
+    print("  第一次 dry-run 检查通过")
+
+    code, out, err = run_cli([
+        "-c", BHED_CONFIG_V2, "migrate",
+        "--old-config", BHED_CONFIG_V1,
+        "--confirm",
+    ])
+    assert_equal(code in [0, 1], True, "migrate confirm 执行完成")
+
+    state_path = os.path.join(BHED_DATA_DIR, "migration_state.json")
+    assert os.path.exists(state_path), "迁移状态文件已创建"
+    with open(state_path, "r", encoding="utf-8") as f:
+        state_data = json.load(f)
+    assert_equal(len(state_data.get("migrated_fingerprints", [])) > 0, True,
+                 "状态文件中有已迁移指纹")
+
+    log_path = os.path.join(BHED_DATA_DIR, "migration_log.jsonl")
+    assert os.path.exists(log_path), "迁移日志已创建"
+    with open(log_path, "r", encoding="utf-8") as f:
+        log_lines = [json.loads(line) for line in f if line.strip()]
+    assert_equal(len(log_lines), 1, "有 1 条迁移日志")
+    assert_equal(log_lines[0]["dry_run"], False, "日志标记为实际执行")
+    assert_equal(log_lines[0]["stats"]["auto_migrated"] >= 1, True,
+                 "日志记录了自动迁移数量")
+
+    print("  confirm 执行检查通过")
+
+    code, out, err = run_cli([
+        "-c", BHED_CONFIG_V2, "migrate",
+        "--old-config", BHED_CONFIG_V1,
+    ])
+    assert_equal(code, 0, "二次 dry-run 成功")
+    assert_in("已迁移跳过:", out, "二次 dry-run 输出包含已迁移跳过")
+
+    with open(state_path, "r", encoding="utf-8") as f:
+        state_data_2 = json.load(f)
+    assert_equal(set(state_data["migrated_fingerprints"]),
+                 set(state_data_2["migrated_fingerprints"]),
+                 "二次执行后指纹数量不变，幂等性保证")
+
+    code, out, err = run_cli([
+        "-c", BHED_CONFIG_V2, "migrate",
+        "--old-config", BHED_CONFIG_V1,
+        "--confirm",
+    ])
+    assert_equal(code in [0, 1], True, "二次 confirm 执行完成")
+
+    with open(log_path, "r", encoding="utf-8") as f:
+        log_lines_2 = [json.loads(line) for line in f if line.strip()]
+    assert_equal(len(log_lines_2), 2, "有 2 条迁移日志")
+    assert_equal(log_lines_2[1]["stats"]["auto_migrated"] == 0, True,
+                 "第二次执行自动迁移数为 0，幂等性保证")
+
+    print("  二次执行幂等性检查通过")
+
+    print("\n  ✓ batch_history error_details 路径迁移测试通过")
+
+
 def main() -> int:
     print("=" * 60)
     print("scan-sorter 配置版本迁移 回归测试")
@@ -1058,6 +1280,7 @@ def main() -> int:
         test_scenario_5_post_migration_operations,
         test_scenario_6_file_pattern_migration,
         test_scenario_7_batch_history_file_pattern,
+        test_scenario_8_batch_history_error_details,
     ]
 
     passed = 0

@@ -1,0 +1,21 @@
+[
+  {
+    "batch_id": "batch_detail_custom",
+    "created_at": "2024-01-01T00:00:00",
+    "operator": "same_op",
+    "status": "partial_failed",
+    "total": 4,
+    "succeeded": 1,
+    "failed": 3,
+    "action_ids": [
+      "a1"
+    ],
+    "error_file_paths": [],
+    "error_details": {
+      "D:\\workSpace\\AI__SPACE\\zzz-00030\\codex_review_a04_custom_error_details\\intake\\2024-A001-001.pdf": "ERR_ILLEGAL_NAME: detail 1",
+      "D:\\workSpace\\AI__SPACE\\zzz-00030\\codex_review_a04_custom_error_details\\intake\\2024-B002-001.jpg": "ERR_ILLEGAL_NAME: detail 2",
+      "D:\\workSpace\\AI__SPACE\\zzz-00030\\codex_review_a04_custom_error_details\\intake\\DETAIL-2025-C003-001.pdf": "ERR_ILLEGAL_NAME: detail 3"
+    },
+    "error_detail_2_pattern_match": "匹配"
+  }
+]

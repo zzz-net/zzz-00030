@@ -1,0 +1,24 @@
+{
+  "executed_at": "2026-06-12T12:10:36.214090",
+  "stats": {
+    "auto_migrated": 1,
+    "conflicts": 0,
+    "manual_required": 2,
+    "skipped": 0,
+    "failed": 0
+  },
+  "migrated_items": [
+    {
+      "item_type": "batch_history",
+      "record_id": "batch_detail_custom",
+      "field_name": "error_detail_2_pattern_match",
+      "old_value": "不匹配",
+      "new_value": "匹配",
+      "action": "auto_migrate",
+      "conflict_type": null,
+      "conflict_detail": "文件名 DETAIL-2025-C003-001.pdf 之前不匹配旧规则，现在匹配新规则，已被纳入规范",
+      "fingerprint": "9f714f52b8fb2478",
+      "migrated": true
+    }
+  ]
+}
