@@ -166,24 +166,65 @@ def cmd_export(args: argparse.Namespace) -> None:
         print(f"未知数据源: {data_source}")
         return
 
+    case_number = getattr(args, "case_number", None)
+    if case_number and data_source in ("actions", "errors"):
+        original_len = len(data)
+        data = [
+            r for r in data
+            if r.get("case_number") == case_number
+        ]
+        filtered_len = len(data)
+        print(f"按案件号 {case_number} 筛选: {original_len} -> {filtered_len} 条")
+
     output_path = args.output
     if not output_path:
         ext = ".json" if fmt == "json" else ".csv"
-        output_path = f"export_{data_source}{ext}"
+        if case_number:
+            output_path = f"export_{data_source}_{case_number}{ext}"
+        else:
+            output_path = f"export_{data_source}{ext}"
 
     if fmt == "json":
         with open(output_path, "w", encoding="utf-8") as f:
             json.dump(data, f, ensure_ascii=False, indent=2)
-        print(f"已导出 JSON: {output_path} ({len(data)} 条)")
-    elif fmt == "csv":
         if not data:
-            print("无数据可导出")
-            return
+            print(f"已导出空 JSON: {output_path} (0 条，无匹配案件号 {case_number})")
+        else:
+            print(f"已导出 JSON: {output_path} ({len(data)} 条)")
+    elif fmt == "csv":
+        fieldnames = []
+        if data:
+            fieldnames = list(data[0].keys())
+        elif data_source == "actions":
+            fieldnames = [
+                "action_id", "batch_id", "source", "destination",
+                "action_type", "timestamp", "operator", "rolled_back",
+                "case_number",
+            ]
+        elif data_source == "errors":
+            fieldnames = [
+                "path", "filename", "case_number", "error",
+                "retry_count", "max_retries", "added_at",
+                "last_retry_at", "batch_id",
+            ]
+        elif data_source == "batches":
+            fieldnames = [
+                "batch_id", "created_at", "operator", "status",
+                "total", "succeeded", "failed", "action_ids",
+                "error_file_paths", "error_details",
+            ]
         with open(output_path, "w", encoding="utf-8-sig", newline="") as f:
-            writer = csv.DictWriter(f, fieldnames=data[0].keys())
+            writer = csv.DictWriter(f, fieldnames=fieldnames)
             writer.writeheader()
-            writer.writerows(data)
-        print(f"已导出 CSV: {output_path} ({len(data)} 条)")
+            if data:
+                writer.writerows(data)
+        if not data:
+            if case_number:
+                print(f"已导出空 CSV (仅表头): {output_path} (0 条，无匹配案件号 {case_number})")
+            else:
+                print(f"已导出空 CSV (仅表头): {output_path} (0 条)")
+        else:
+            print(f"已导出 CSV: {output_path} ({len(data)} 条)")
 
 
 def cmd_reload(args: argparse.Namespace) -> None:
@@ -648,6 +689,11 @@ def build_parser() -> argparse.ArgumentParser:
         help="导出格式 (默认: json)",
     )
     p_export.add_argument("--output", help="输出文件路径")
+    p_export.add_argument(
+        "--case-number",
+        default=None,
+        help="按案件号筛选 (仅 actions 和 errors 生效)",
+    )
 
     p_reload = sub.add_parser("reload", help="重载配置")
 

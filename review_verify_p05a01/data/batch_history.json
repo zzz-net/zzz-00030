@@ -1,0 +1,21 @@
+[
+  {
+    "batch_id": "bbcba9dd",
+    "created_at": "2026-06-12T12:33:22.685860",
+    "operator": "reviewer",
+    "status": "partial_failed",
+    "total": 3,
+    "succeeded": 2,
+    "failed": 1,
+    "action_ids": [
+      "cf1808de3270",
+      "46bf04665a09"
+    ],
+    "error_file_paths": [
+      "D:\\workSpace\\AI__SPACE\\zzz-00030\\review_verify_p05a01\\intake\\2026-R100-002.pdf"
+    ],
+    "error_details": {
+      "D:\\workSpace\\AI__SPACE\\zzz-00030\\review_verify_p05a01\\intake\\2026-R100-002.pdf": "目标路径已被占用: D:\\workSpace\\AI__SPACE\\zzz-00030\\review_verify_p05a01\\target\\2026-R100\\2026-R100-002.pdf"
+    }
+  }
+]

@@ -1,9 +1,9 @@
 {
   "batches": [
     {
-      "batch_id": "52091957",
+      "batch_id": "e9b58724",
       "status": "partial_failed",
-      "created_at": "2026-06-12T12:03:41.342803",
+      "created_at": "2026-06-12T12:28:57.908006",
       "operator": "report_test_op",
       "total": 2,
       "succeeded": 1,
@@ -17,7 +17,7 @@
           "source": "D:\\workSpace\\AI__SPACE\\zzz-00030\\test_report_run\\intake\\2024-D004-001.pdf",
           "destination": "D:\\workSpace\\AI__SPACE\\zzz-00030\\test_report_run\\target_v2\\2024-D004\\2024-D004-001.pdf",
           "case_number": "2024-D004",
-          "timestamp": "2026-06-12T12:03:41.347158"
+          "timestamp": "2026-06-12T12:28:57.911034"
         }
       ],
       "failed_files": [
@@ -41,7 +41,7 @@
       "retry_count": 0,
       "max_retries": 3,
       "case_number": null,
-      "batch_id": "52091957"
+      "batch_id": "e9b58724"
     }
   ],
   "healthcheck_summary": {
@@ -64,5 +64,5 @@
     "有 1 个失败项可重试"
   ],
   "errors": [],
-  "generated_at": "2026-06-12T12:03:41.429220"
+  "generated_at": "2026-06-12T12:28:58.000031"
 }

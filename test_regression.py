@@ -335,6 +335,168 @@ def main() -> int:
     assert_in("error", rows[0], "CSV 含 error 列")
     assert_in("retry_count", rows[0], "CSV 含 retry_count 列")
 
+    # ---------- Step 8.5: 按案件号筛选导出（actions/errors JSON/CSV） ----------
+    step("Step 8.5: 按案件号筛选导出")
+
+    CASED_ACTIONS_JSON = os.path.join(TEST_ROOT, "cased_actions.json")
+    CASED_ACTIONS_CSV = os.path.join(TEST_ROOT, "cased_actions.csv")
+    CASED_ERRORS_JSON = os.path.join(TEST_ROOT, "cased_errors.json")
+    CASED_ERRORS_CSV = os.path.join(TEST_ROOT, "cased_errors.csv")
+    EMPTY_CASED_JSON = os.path.join(TEST_ROOT, "empty_cased.json")
+    EMPTY_CASED_CSV = os.path.join(TEST_ROOT, "empty_cased.csv")
+    FULL_ACTIONS_JSON_COPY = os.path.join(TEST_ROOT, "full_actions_copy.json")
+    FULL_ERRORS_CSV_COPY = os.path.join(TEST_ROOT, "full_errors_copy.csv")
+
+    TARGET_CASE = "2024-A001"
+    OTHER_CASE = "2024-B002"
+    NONEXISTENT_CASE = "9999-Z999"
+
+    print(f"  目标案件号: {TARGET_CASE}")
+    print(f"  对比案件号: {OTHER_CASE}")
+
+    cli_main(["-c", CONFIG_PATH, "export", "--source", "actions",
+              "--format", "json", "--output", CASED_ACTIONS_JSON,
+              "--case-number", TARGET_CASE])
+    assert_eq(os.path.exists(CASED_ACTIONS_JSON), True, "按案件号筛选 actions JSON 文件存在")
+    with open(CASED_ACTIONS_JSON, "r", encoding="utf-8") as f:
+        cased_actions = json.load(f)
+    for a in cased_actions:
+        assert_eq(a.get("case_number"), TARGET_CASE, f"actions JSON 筛选: 每条记录 case_number == {TARGET_CASE}")
+    target_case_action_count = len([
+        a for a in exported_actions if a.get("case_number") == TARGET_CASE
+    ])
+    assert_eq(len(cased_actions), target_case_action_count,
+              "actions JSON 筛选条数与全量中该案件条数一致")
+    print(f"  actions 筛选后条数: {len(cased_actions)} (全量该案件 {target_case_action_count})")
+
+    cli_main(["-c", CONFIG_PATH, "export", "--source", "actions",
+              "--format", "csv", "--output", CASED_ACTIONS_CSV,
+              "--case-number", TARGET_CASE])
+    assert_eq(os.path.exists(CASED_ACTIONS_CSV), True, "按案件号筛选 actions CSV 文件存在")
+    with open(CASED_ACTIONS_CSV, "r", encoding="utf-8-sig", newline="") as f:
+        reader = csv.DictReader(f)
+        cased_actions_csv = list(reader)
+    for a in cased_actions_csv:
+        assert_eq(a.get("case_number"), TARGET_CASE, f"actions CSV 筛选: 每条记录 case_number == {TARGET_CASE}")
+    assert_eq(len(cased_actions_csv), target_case_action_count,
+              "actions CSV 筛选条数与全量中该案件条数一致")
+    expected_action_fields = {
+        "action_id", "batch_id", "source", "destination",
+        "action_type", "timestamp", "operator", "rolled_back", "case_number",
+    }
+    if cased_actions_csv:
+        actual_fields = set(cased_actions_csv[0].keys())
+        assert expected_action_fields.issubset(actual_fields), f"actions CSV 字段齐全: {actual_fields}"
+
+    cli_main(["-c", CONFIG_PATH, "export", "--source", "errors",
+              "--format", "json", "--output", CASED_ERRORS_JSON,
+              "--case-number", OTHER_CASE])
+    assert_eq(os.path.exists(CASED_ERRORS_JSON), True, "按案件号筛选 errors JSON 文件存在")
+    with open(CASED_ERRORS_JSON, "r", encoding="utf-8") as f:
+        cased_errors = json.load(f)
+    for e in cased_errors:
+        assert_eq(e.get("case_number"), OTHER_CASE, f"errors JSON 筛选: 每条记录 case_number == {OTHER_CASE}")
+    print(f"  errors 筛选后条数: {len(cased_errors)}")
+
+    cli_main(["-c", CONFIG_PATH, "export", "--source", "errors",
+              "--format", "csv", "--output", CASED_ERRORS_CSV,
+              "--case-number", OTHER_CASE])
+    assert_eq(os.path.exists(CASED_ERRORS_CSV), True, "按案件号筛选 errors CSV 文件存在")
+    with open(CASED_ERRORS_CSV, "r", encoding="utf-8-sig", newline="") as f:
+        reader = csv.DictReader(f)
+        cased_errors_csv = list(reader)
+    for e in cased_errors_csv:
+        assert_eq(e.get("case_number"), OTHER_CASE, f"errors CSV 筛选: 每条记录 case_number == {OTHER_CASE}")
+
+    step("Step 8.5a: 空结果筛选导出（合法文件 + 清晰提示）")
+
+    cli_main(["-c", CONFIG_PATH, "export", "--source", "actions",
+              "--format", "json", "--output", EMPTY_CASED_JSON,
+              "--case-number", NONEXISTENT_CASE])
+    assert_eq(os.path.exists(EMPTY_CASED_JSON), True, "空结果 actions JSON 文件存在")
+    with open(EMPTY_CASED_JSON, "r", encoding="utf-8") as f:
+        empty_data = json.load(f)
+    assert_eq(isinstance(empty_data, list), True, "空结果 JSON 应为合法列表")
+    assert_eq(len(empty_data), 0, "空结果 JSON 列表长度为 0")
+    print(f"  空结果 actions JSON 内容: {empty_data}")
+
+    cli_main(["-c", CONFIG_PATH, "export", "--source", "errors",
+              "--format", "csv", "--output", EMPTY_CASED_CSV,
+              "--case-number", NONEXISTENT_CASE])
+    assert_eq(os.path.exists(EMPTY_CASED_CSV), True, "空结果 errors CSV 文件存在")
+    with open(EMPTY_CASED_CSV, "r", encoding="utf-8-sig", newline="") as f:
+        reader = csv.DictReader(f)
+        empty_rows = list(reader)
+        fieldnames = reader.fieldnames
+    assert_eq(len(empty_rows), 0, "空结果 CSV 数据行为 0")
+    assert fieldnames is not None, "空结果 CSV 应有表头"
+    expected_error_fields = {
+        "path", "filename", "case_number", "error",
+        "retry_count", "max_retries", "added_at",
+        "last_retry_at", "batch_id",
+    }
+    assert expected_error_fields.issubset(set(fieldnames)), f"空结果 errors CSV 表头齐全: {fieldnames}"
+    print(f"  空结果 errors CSV 表头: {fieldnames}")
+
+    step("Step 8.5b: 原全量导出无退化（reload 配置后再导一次结果一致）")
+
+    import shutil as _shutil
+    _shutil.copy2(EXPORT_JSON, FULL_ACTIONS_JSON_COPY)
+    _shutil.copy2(EXPORT_CSV, FULL_ERRORS_CSV_COPY)
+    with open(FULL_ACTIONS_JSON_COPY, "r", encoding="utf-8") as f:
+        actions_before = json.load(f)
+    with open(FULL_ERRORS_CSV_COPY, "r", encoding="utf-8-sig", newline="") as f:
+        reader = csv.DictReader(f)
+        errors_before_rows = list(reader)
+        errors_before_fields = reader.fieldnames
+    errors_before = [dict(r) for r in errors_before_rows]
+
+    reload_export_actions = os.path.join(TEST_ROOT, "reload_actions.json")
+    reload_export_errors = os.path.join(TEST_ROOT, "reload_errors.csv")
+
+    cli_main(["-c", CONFIG_PATH, "reload"])
+    cli_main(["-c", CONFIG_PATH, "export", "--source", "actions",
+              "--format", "json", "--output", reload_export_actions])
+    cli_main(["-c", CONFIG_PATH, "export", "--source", "errors",
+              "--format", "csv", "--output", reload_export_errors])
+
+    with open(reload_export_actions, "r", encoding="utf-8") as f:
+        actions_after = json.load(f)
+    with open(reload_export_errors, "r", encoding="utf-8-sig", newline="") as f:
+        reader = csv.DictReader(f)
+        errors_after_rows = list(reader)
+        errors_after_fields = reader.fieldnames
+    errors_after = [dict(r) for r in errors_after_rows]
+
+    assert_eq(len(actions_before), len(actions_after),
+              "reload 后 actions JSON 条数一致")
+    for i, (ba, aa) in enumerate(zip(actions_before, actions_after)):
+        for key in ("action_id", "batch_id", "source", "destination",
+                     "action_type", "operator", "rolled_back", "case_number"):
+            assert_eq(ba.get(key), aa.get(key),
+                      f"reload 前后 actions[{i}].{key} 一致")
+    print(f"  reload 前后 actions JSON: {len(actions_before)} 条一致 ✓")
+
+    assert_eq(errors_before_fields, errors_after_fields,
+              "reload 后 errors CSV 表头一致")
+    assert_eq(len(errors_before), len(errors_after),
+              "reload 后 errors CSV 条数一致")
+    for i, (be, ae) in enumerate(zip(errors_before, errors_after)):
+        for key in ("path", "filename", "case_number", "error", "retry_count"):
+            assert_eq(be.get(key), ae.get(key),
+                      f"reload 前后 errors[{i}].{key} 一致")
+    print(f"  reload 前后 errors CSV: {len(errors_before)} 条一致 ✓")
+
+    cli_main(["-c", CONFIG_PATH, "export", "--source", "actions",
+              "--format", "csv", "--output", EXPORT_CSV.replace(".csv", "_full_actions.csv")])
+    assert_eq(os.path.exists(EXPORT_CSV.replace(".csv", "_full_actions.csv")), True,
+              "不带 --case-number 的全量 actions CSV 仍能导出")
+    cli_main(["-c", CONFIG_PATH, "export", "--source", "errors",
+              "--format", "json", "--output", EXPORT_JSON.replace(".json", "_full_errors.json")])
+    assert_eq(os.path.exists(EXPORT_JSON.replace(".json", "_full_errors.json")), True,
+              "不带 --case-number 的全量 errors JSON 仍能导出")
+    print("  不带 --case-number 参数的全量导出无退化 ✓")
+
     # ---------- Step 9: 重启一致性验证 ----------
     step("Step 9: 重启后载入 BatchManager，验证队列一致")
 
@@ -376,6 +538,59 @@ def main() -> int:
         True,
         "error_queue 中的文件在 processing_queue 中都应是非 done 状态（failed 或 rolled_back）"
     )
+
+    step("Step 9.5: 重启后再导一次 —— 验证案件号筛选结果与之前一致")
+
+    RESTART_ACTIONS_JSON = os.path.join(TEST_ROOT, "restart_cased_actions.json")
+    RESTART_ACTIONS_CSV = os.path.join(TEST_ROOT, "restart_cased_actions.csv")
+    RESTART_ERRORS_JSON = os.path.join(TEST_ROOT, "restart_cased_errors.json")
+    RESTART_ERRORS_CSV = os.path.join(TEST_ROOT, "restart_cased_errors.csv")
+
+    cli_main(["-c", CONFIG_PATH, "export", "--source", "actions",
+              "--format", "json", "--output", RESTART_ACTIONS_JSON,
+              "--case-number", TARGET_CASE])
+    with open(RESTART_ACTIONS_JSON, "r", encoding="utf-8") as f:
+        restart_actions = json.load(f)
+    assert_eq(len(restart_actions), len(cased_actions),
+              "重启后按案件号筛选 actions JSON 条数一致")
+    for i, (before, after) in enumerate(zip(cased_actions, restart_actions)):
+        for key in ("action_id", "batch_id", "source", "destination",
+                     "action_type", "operator", "rolled_back", "case_number"):
+            assert_eq(before.get(key), after.get(key),
+                      f"重启前后 actions[{i}].{key} 一致")
+    print(f"  重启后按案件号筛选 actions JSON: {len(restart_actions)} 条一致 ✓")
+
+    cli_main(["-c", CONFIG_PATH, "export", "--source", "actions",
+              "--format", "csv", "--output", RESTART_ACTIONS_CSV,
+              "--case-number", TARGET_CASE])
+    with open(RESTART_ACTIONS_CSV, "r", encoding="utf-8-sig", newline="") as f:
+        reader = csv.DictReader(f)
+        restart_actions_csv = list(reader)
+    assert_eq(len(restart_actions_csv), len(cased_actions_csv),
+              "重启后按案件号筛选 actions CSV 条数一致")
+    for i, (before, after) in enumerate(zip(cased_actions_csv, restart_actions_csv)):
+        for key in ("action_id", "batch_id", "case_number"):
+            assert_eq(before.get(key), after.get(key),
+                      f"重启前后 actions CSV[{i}].{key} 一致")
+
+    cli_main(["-c", CONFIG_PATH, "export", "--source", "errors",
+              "--format", "json", "--output", RESTART_ERRORS_JSON,
+              "--case-number", OTHER_CASE])
+    with open(RESTART_ERRORS_JSON, "r", encoding="utf-8") as f:
+        restart_errors = json.load(f)
+    assert_eq(len(restart_errors), len(cased_errors),
+              "重启后按案件号筛选 errors JSON 条数一致")
+
+    cli_main(["-c", CONFIG_PATH, "export", "--source", "errors",
+              "--format", "csv", "--output", RESTART_ERRORS_CSV,
+              "--case-number", OTHER_CASE])
+    with open(RESTART_ERRORS_CSV, "r", encoding="utf-8-sig", newline="") as f:
+        reader = csv.DictReader(f)
+        restart_errors_csv = list(reader)
+    assert_eq(len(restart_errors_csv), len(cased_errors_csv),
+              "重启后按案件号筛选 errors CSV 条数一致")
+
+    print(f"  重启后按案件号筛选 errors JSON/CSV 一致 ✓")
 
     step("所有断言通过 ✓")
     print(f"\n证据目录保留: {TEST_ROOT}")
