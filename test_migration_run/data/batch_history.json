@@ -1,0 +1,22 @@
+[
+  {
+    "batch_id": "73cad8ca",
+    "created_at": "2026-06-12T17:43:09.790647",
+    "operator": "operator_v2",
+    "status": "partial_failed",
+    "total": 4,
+    "succeeded": 3,
+    "failed": 1,
+    "action_ids": [
+      "52126c087bf0",
+      "0b4cc5bd44e3",
+      "50efb47e58b5"
+    ],
+    "error_file_paths": [
+      "D:\\workSpace\\AI__SPACE\\zzz-00030\\test_migration_run\\intake\\bad file#name.pdf"
+    ],
+    "error_details": {
+      "D:\\workSpace\\AI__SPACE\\zzz-00030\\test_migration_run\\intake\\bad file#name.pdf": "文件名包含非法字符; 无法从文件名解析案卷号"
+    }
+  }
+]

@@ -41,6 +41,29 @@ from scan_sorter.retry_manager import (
     export_retry_result_csv,
 )
 from scan_sorter.watcher import Watcher
+from scan_sorter.handoff_creator import (
+    create_handoff_package,
+    export_create_result_csv,
+    export_create_result_json,
+    get_create_history,
+    preview_handoff,
+)
+from scan_sorter.handoff_validator import (
+    export_verify_result_csv,
+    export_verify_result_json,
+    verify_handoff_package,
+)
+from scan_sorter.handoff_importer import (
+    export_import_result_csv,
+    export_import_result_json,
+    export_rollback_result_csv,
+    export_rollback_result_json,
+    get_handoff_history,
+    get_imported_packages,
+    import_handoff_package,
+    rollback_handoff_import,
+)
+from scan_sorter.config import AppConfig
 
 sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding="utf-8", errors="replace")
 sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding="utf-8", errors="replace")
@@ -910,6 +933,432 @@ def cmd_migrate(args: argparse.Namespace) -> int:
     return 0
 
 
+def _target_config_summary_for_cli(config: AppConfig) -> dict:
+    return {
+        "intake_dir": os.path.abspath(config.intake_dir),
+        "target_base": os.path.abspath(config.target_base),
+        "operator": config.operator,
+        "case_number_pattern": config.rules.case_number_pattern,
+        "file_pattern": config.rules.file_pattern,
+        "target_structure": config.rules.target_structure,
+        "action": config.rules.action,
+    }
+
+
+def cmd_handoff_preview(args: argparse.Namespace) -> None:
+    config = load_config(args.config)
+    case_numbers = None
+    if args.case_numbers:
+        case_numbers = [c.strip() for c in args.case_numbers.split(",") if c.strip()]
+    batch_ids = None
+    if args.batch_ids:
+        batch_ids = [b.strip() for b in args.batch_ids.split(",") if b.strip()]
+
+    preview = preview_handoff(config, case_numbers, batch_ids)
+
+    print(f"\n{'='*60}")
+    print(f"交接包预览")
+    print(f"{'='*60}")
+    print(f"  案件号数量: {len(preview.case_numbers)}")
+    if preview.case_numbers:
+        print(f"  案件号列表: {', '.join(preview.case_numbers)}")
+    print(f"  批次数量: {len(preview.batch_ids)}")
+    if preview.batch_ids:
+        print(f"  批次 ID 列表: {', '.join(preview.batch_ids)}")
+    print(f"  文件总数: {preview.total_files}")
+    print(f"  总大小: {preview.total_size} 字节")
+    print(f"  预计包大小: {preview.estimated_package_size} 字节")
+
+    if preview.files:
+        print(f"\n  {'='*20} 文件清单 {'='*20}")
+        for fi in preview.files[:20]:
+            print(f"    - {fi.filename}")
+            print(f"      案件号: {fi.case_number}, 批次: {fi.batch_id}")
+            print(f"      源路径: {fi.original_path}")
+            print(f"      大小: {fi.size} 字节")
+        if len(preview.files) > 20:
+            print(f"    ... 还有 {len(preview.files) - 20} 个文件")
+
+    fmt = args.format
+    output_path = args.output
+    if fmt or output_path:
+        fmt = fmt or "json"
+        if not output_path:
+            output_path = f"handoff_preview.{fmt}"
+        if fmt == "json":
+            from scan_sorter.utils import save_json
+            save_json(output_path, preview.to_dict())
+            print(f"\n  预览已导出 JSON: {output_path}")
+        elif fmt == "csv":
+            import csv as csv_mod
+            from scan_sorter.utils import ensure_dir
+            ensure_dir(os.path.dirname(output_path))
+            fieldnames = [
+                "filename", "case_number", "batch_id", "size",
+                "original_path", "relative_path",
+            ]
+            with open(output_path, "w", encoding="utf-8-sig", newline="") as f:
+                writer = csv_mod.DictWriter(f, fieldnames=fieldnames)
+                writer.writeheader()
+                for fi in preview.files:
+                    row = fi.to_dict()
+                    row = {k: row.get(k, "") for k in fieldnames}
+                    writer.writerow(row)
+            print(f"\n  预览已导出 CSV: {output_path}")
+
+
+def cmd_handoff_create(args: argparse.Namespace) -> int:
+    config = load_config(args.config)
+    case_numbers = None
+    if args.case_numbers:
+        case_numbers = [c.strip() for c in args.case_numbers.split(",") if c.strip()]
+    batch_ids = None
+    if args.batch_ids:
+        batch_ids = [b.strip() for b in args.batch_ids.split(",") if b.strip()]
+
+    output_dir = args.output_dir or "./handoff_packages"
+    description = args.description or ""
+
+    print(f"\n{'='*60}")
+    print(f"创建交接包")
+    print(f"{'='*60}")
+    print(f"  输出目录: {os.path.abspath(output_dir)}")
+    if case_numbers:
+        print(f"  案件号: {', '.join(case_numbers)}")
+    if batch_ids:
+        print(f"  批次 ID: {', '.join(batch_ids)}")
+    if description:
+        print(f"  描述: {description}")
+
+    try:
+        state, package_zip = create_handoff_package(
+            config, output_dir, case_numbers, batch_ids,
+            description=description, resume=not args.no_resume,
+        )
+    except ValueError as e:
+        print(f"\n  ✗ 创建失败: {e}")
+        return 1
+
+    print(f"\n{'='*20} 创建结果 {'='*20}")
+    print(f"  包 ID: {state.package_id}")
+    print(f"  状态: {state.status.value}")
+    print(f"  文件总数: {state.manifest.total_files if state.manifest else 0}")
+    print(f"  成功处理: {len(state.files_processed)}")
+    print(f"  失败: {len(state.files_failed)}")
+    print(f"  压缩包: {package_zip}")
+
+    if state.files_failed:
+        print(f"\n  失败文件:")
+        for fp in state.files_failed[:10]:
+            print(f"    - {fp}")
+        if len(state.files_failed) > 10:
+            print(f"    ... 还有 {len(state.files_failed) - 10} 个")
+
+    fmt = args.format
+    result_output = args.output
+    if fmt or result_output:
+        fmt = fmt or "json"
+        if not result_output:
+            result_output = f"handoff_create_{state.package_id}.{fmt}"
+        if fmt == "json":
+            export_create_result_json(state, result_output)
+            print(f"\n  结果已导出 JSON: {result_output}")
+        elif fmt == "csv":
+            export_create_result_csv(state, result_output)
+            print(f"\n  结果已导出 CSV: {result_output}")
+
+    if state.status.value == "created":
+        print(f"\n{'='*60}")
+        print("✓ 交接包创建完成")
+        print(f"{'='*60}")
+        return 0
+    else:
+        print(f"\n{'='*60}")
+        print("⚠ 交接包创建存在失败项")
+        print(f"{'='*60}")
+        return 1
+
+
+def cmd_handoff_verify(args: argparse.Namespace) -> int:
+    config = load_config(args.config)
+    package_path = args.package
+
+    target_cfg = None
+    if not args.ignore_config:
+        target_cfg = _target_config_summary_for_cli(config)
+
+    print(f"\n{'='*60}")
+    print(f"校验交接包")
+    print(f"{'='*60}")
+    print(f"  包路径: {os.path.abspath(package_path)}")
+
+    result, temp_dir = verify_handoff_package(package_path, target_cfg)
+
+    print(f"\n  包 ID: {result.package_id or '未知'}")
+    print(f"  是否有效: {result.is_valid}")
+    print(f"  Manifest 存在: {result.manifest_exists}")
+    print(f"  文件完整性: {result.integrity_ok}")
+    print(f"  文件齐全: {result.files_complete}")
+    print(f"  内容匹配: {result.files_match}")
+
+    if result.errors:
+        print(f"\n  错误 ({len(result.errors)} 项):")
+        for e in result.errors:
+            print(f"    ✗ {e}")
+
+    if result.warnings:
+        print(f"\n  警告 ({len(result.warnings)} 项):")
+        for w in result.warnings:
+            print(f"    ⚠ {w}")
+
+    if result.missing_files:
+        print(f"\n  缺失文件 ({len(result.missing_files)} 个):")
+        for mf in result.missing_files:
+            print(f"    - {mf.relative_path}")
+
+    if result.tampered_files:
+        print(f"\n  被篡改文件 ({len(result.tampered_files)} 个):")
+        for tf in result.tampered_files:
+            print(f"    - {tf.relative_path} (预期 SHA: {tf.sha256})")
+
+    if result.manifest:
+        m = result.manifest
+        print(f"\n  {'='*20} 包信息 {'='*20}")
+        print(f"    创建时间: {m.created_at}")
+        print(f"    源操作者: {m.source_operator}")
+        print(f"    源主机: {m.source_host}")
+        print(f"    案件号: {', '.join(m.case_numbers)}")
+        print(f"    批次: {', '.join(m.batch_ids)}")
+        print(f"    文件数: {m.total_files}")
+        print(f"    总大小: {m.total_size} 字节")
+        if m.description:
+            print(f"    描述: {m.description}")
+
+    fmt = args.format
+    output_path = args.output
+    if fmt or output_path:
+        fmt = fmt or "json"
+        if not output_path:
+            pid = result.package_id or "unknown"
+            output_path = f"handoff_verify_{pid}.{fmt}"
+        if fmt == "json":
+            export_verify_result_json(result, output_path)
+            print(f"\n  校验结果已导出 JSON: {output_path}")
+        elif fmt == "csv":
+            export_verify_result_csv(result, output_path)
+            print(f"\n  校验结果已导出 CSV: {output_path}")
+
+    print(f"\n{'='*60}")
+    if result.is_valid:
+        print("✓ 交接包校验通过")
+        print(f"{'='*60}")
+        return 0
+    else:
+        print("✗ 交接包校验失败")
+        print(f"{'='*60}")
+        return 1
+
+
+def cmd_handoff_import(args: argparse.Namespace) -> int:
+    config = load_config(args.config)
+    package_path = args.package
+
+    print(f"\n{'='*60}")
+    print(f"导入交接包")
+    print(f"{'='*60}")
+    print(f"  包路径: {os.path.abspath(package_path)}")
+    print(f"  目标目录: {os.path.abspath(config.target_base)}")
+
+    result = import_handoff_package(
+        package_path, config,
+        resume=not args.no_resume,
+        allow_config_mismatch=args.allow_config_mismatch,
+        allow_partial=args.allow_partial,
+    )
+
+    print(f"\n{'='*20} 导入结果 {'='*20}")
+    print(f"  包 ID: {result.package_id}")
+    print(f"  状态: {result.status.value}")
+    print(f"  成功: {result.success}")
+    print(f"  文件总数: {result.total_files}")
+    print(f"  已导入: {result.imported}")
+    print(f"  跳过(冲突): {result.skipped}")
+    print(f"  失败: {result.failed}")
+    print(f"  状态文件: {result.state_path}")
+
+    if result.warnings:
+        print(f"\n  警告 ({len(result.warnings)} 项):")
+        for w in result.warnings:
+            print(f"    ⚠ {w}")
+
+    if result.conflicts:
+        print(f"\n  冲突明细 ({len(result.conflicts)} 项):")
+        for c in result.conflicts:
+            fn = c.file_item.filename if c.file_item else "无文件"
+            print(f"    ✗ [{c.conflict_type.value}] {fn}")
+            if c.target_path:
+                print(f"       目标路径: {c.target_path}")
+            if c.detail:
+                print(f"       详情: {c.detail}")
+
+    if result.imported_files:
+        print(f"\n  已导入文件 ({len(result.imported_files)} 个):")
+        for p in result.imported_files[:20]:
+            print(f"    ✓ {p}")
+        if len(result.imported_files) > 20:
+            print(f"    ... 还有 {len(result.imported_files) - 20} 个")
+
+    fmt = args.format
+    output_path = args.output
+    if fmt or output_path:
+        fmt = fmt or "json"
+        if not output_path:
+            output_path = f"handoff_import_{result.package_id}.{fmt}"
+        if fmt == "json":
+            export_import_result_json(result, output_path)
+            print(f"\n  导入结果已导出 JSON: {output_path}")
+        elif fmt == "csv":
+            export_import_result_csv(result, output_path)
+            print(f"\n  导入结果已导出 CSV: {output_path}")
+
+    print(f"\n{'='*60}")
+    if result.success:
+        if result.status.value == "partial_imported":
+            print("⚠ 部分导入成功（存在冲突或失败项）")
+        else:
+            print("✓ 交接包导入完成")
+        print(f"{'='*60}")
+        return 0 if result.status.value == "imported" else 1
+    else:
+        print("✗ 交接包导入失败")
+        print(f"{'='*60}")
+        return 1
+
+
+def cmd_handoff_rollback(args: argparse.Namespace) -> int:
+    config = load_config(args.config)
+    package_id = args.package_id
+
+    print(f"\n{'='*60}")
+    print(f"撤销交接包导入")
+    print(f"{'='*60}")
+    print(f"  包 ID: {package_id}")
+    print(f"  注意: 仅回退本次导入实际写入的内容，审计日志将保留")
+
+    state, result = rollback_handoff_import(package_id, config)
+
+    print(f"\n{'='*20} 撤销结果 {'='*20}")
+    print(f"  成功: {result.success}")
+    print(f"  回退文件数: {result.total_rolled_back}")
+    print(f"  保留审计日志: {result.kept_audit_log}")
+    print(f"  操作 ID: {result.operation_id}")
+
+    if result.rolled_back_files:
+        print(f"\n  已回退文件 ({len(result.rolled_back_files)} 个):")
+        for p in result.rolled_back_files:
+            print(f"    ✓ {p}")
+
+    if result.failed_rollbacks:
+        print(f"\n  回退失败 ({len(result.failed_rollbacks)} 项):")
+        for fr in result.failed_rollbacks:
+            print(f"    ✗ {fr.get('path', '')}: {fr.get('error', '')}")
+
+    if result.details:
+        print(f"\n  详细记录:")
+        for d in result.details:
+            icon = "✓" if d.get("ok") else "✗"
+            print(f"    {icon} {d.get('detail', '')}")
+
+    fmt = args.format
+    output_path = args.output
+    if fmt or output_path:
+        fmt = fmt or "json"
+        if not output_path:
+            output_path = f"handoff_rollback_{package_id}.{fmt}"
+        if fmt == "json":
+            export_rollback_result_json(result, output_path)
+            print(f"\n  撤销结果已导出 JSON: {output_path}")
+        elif fmt == "csv":
+            export_rollback_result_csv(result, output_path)
+            print(f"\n  撤销结果已导出 CSV: {output_path}")
+
+    print(f"\n{'='*60}")
+    if result.success:
+        print("✓ 交接包导入已撤销")
+        print(f"{'='*60}")
+        return 0
+    else:
+        print("✗ 撤销失败")
+        print(f"{'='*60}")
+        return 1
+
+
+def cmd_handoff_history(args: argparse.Namespace) -> None:
+    config = load_config(args.config)
+    data_dir = os.path.abspath(config.logging.dir)
+
+    print(f"\n{'='*60}")
+    print(f"交接包操作历史")
+    print(f"{'='*60}")
+    print(f"  数据目录: {data_dir}")
+
+    imported = get_imported_packages(data_dir)
+    print(f"\n  已导入包 ID ({len(imported)} 个):")
+    for pid in imported:
+        print(f"    - {pid}")
+
+    history = get_handoff_history(data_dir, args.package_id)
+    print(f"\n  操作记录 ({len(history)} 条):")
+
+    if not history:
+        print("    (无记录)")
+    else:
+        for rec in history:
+            print(f"\n    [{rec.get('operation_type', '')}] {rec.get('timestamp', '')}")
+            print(f"      包 ID: {rec.get('package_id', '')}")
+            print(f"      操作者: {rec.get('operator', '')}")
+            print(f"      状态: {rec.get('status', '')}")
+            details = rec.get("details", {})
+            if details:
+                for k, v in details.items():
+                    if isinstance(v, list) and len(v) > 5:
+                        print(f"      {k}: [{len(v)} 项]")
+                    else:
+                        print(f"      {k}: {v}")
+
+    fmt = args.format
+    output_path = args.output
+    if fmt or output_path:
+        fmt = fmt or "json"
+        if not output_path:
+            suffix = args.package_id or "all"
+            output_path = f"handoff_history_{suffix}.{fmt}"
+        if fmt == "json":
+            from scan_sorter.utils import save_json
+            save_json(output_path, {
+                "imported_packages": imported,
+                "operations": history,
+            })
+            print(f"\n  历史已导出 JSON: {output_path}")
+        elif fmt == "csv":
+            import csv as csv_mod
+            from scan_sorter.utils import ensure_dir
+            ensure_dir(os.path.dirname(output_path))
+            fieldnames = [
+                "operation_id", "operation_type", "timestamp",
+                "operator", "package_id", "status", "details",
+            ]
+            with open(output_path, "w", encoding="utf-8-sig", newline="") as f:
+                writer = csv_mod.DictWriter(f, fieldnames=fieldnames)
+                writer.writeheader()
+                for rec in history:
+                    row = {k: rec.get(k, "") for k in fieldnames}
+                    if isinstance(row["details"], dict):
+                        row["details"] = json.dumps(row["details"], ensure_ascii=False)
+                    writer.writerow(row)
+            print(f"\n  历史已导出 CSV: {output_path}")
+
+
 def _print_result(result: dict) -> None:
     for key, value in result.items():
         if key == "details":
@@ -1098,6 +1547,124 @@ def build_parser() -> argparse.ArgumentParser:
         help="迁移结果导出路径",
     )
 
+    p_hp = sub.add_parser("handoff-preview", help="交接包预览:查看待打包的归档文件和统计")
+    p_hp.add_argument(
+        "--case-numbers",
+        default=None,
+        help="按案件号筛选，多个用逗号分隔",
+    )
+    p_hp.add_argument(
+        "--batch-ids",
+        default=None,
+        help="按批次 ID 筛选，多个用逗号分隔",
+    )
+    p_hp.add_argument(
+        "--format",
+        choices=["json", "csv"],
+        default=None,
+        help="导出格式 (不指定则不导出文件)",
+    )
+    p_hp.add_argument("--output", help="预览结果导出路径")
+
+    p_hc = sub.add_parser("handoff-create", help="交接包创建:按案件号或批次生成可携带交接包")
+    p_hc.add_argument(
+        "--case-numbers",
+        default=None,
+        help="按案件号筛选，多个用逗号分隔",
+    )
+    p_hc.add_argument(
+        "--batch-ids",
+        default=None,
+        help="按批次 ID 筛选，多个用逗号分隔",
+    )
+    p_hc.add_argument(
+        "--output-dir",
+        default=None,
+        help="交接包输出目录 (默认: ./handoff_packages)",
+    )
+    p_hc.add_argument("--description", default=None, help="交接包描述")
+    p_hc.add_argument(
+        "--no-resume",
+        action="store_true",
+        default=False,
+        help="不使用断点续传，从头开始创建",
+    )
+    p_hc.add_argument(
+        "--format",
+        choices=["json", "csv"],
+        default=None,
+        help="导出格式 (不指定则不导出文件)",
+    )
+    p_hc.add_argument("--output", help="创建结果导出路径")
+
+    p_hv = sub.add_parser("handoff-verify", help="交接包校验:检查包完整性、文件未被篡改")
+    p_hv.add_argument("package", help="交接包路径（zip 文件或目录）")
+    p_hv.add_argument(
+        "--ignore-config",
+        action="store_true",
+        default=False,
+        help="跳过源/目标配置差异检查",
+    )
+    p_hv.add_argument(
+        "--format",
+        choices=["json", "csv"],
+        default=None,
+        help="导出格式 (不指定则不导出文件)",
+    )
+    p_hv.add_argument("--output", help="校验结果导出路径")
+
+    p_hi = sub.add_parser("handoff-import", help="交接包导入:将交接包内容校验后导入目标环境")
+    p_hi.add_argument("package", help="交接包路径（zip 文件或目录）")
+    p_hi.add_argument(
+        "--no-resume",
+        action="store_true",
+        default=False,
+        help="不使用断点续传，从头开始导入",
+    )
+    p_hi.add_argument(
+        "--allow-config-mismatch",
+        action="store_true",
+        default=False,
+        help="允许源与目标配置存在差异（会显示警告）",
+    )
+    p_hi.add_argument(
+        "--allow-partial",
+        action="store_true",
+        default=False,
+        help="允许部分导入（存在冲突时仅导入无冲突文件）",
+    )
+    p_hi.add_argument(
+        "--format",
+        choices=["json", "csv"],
+        default=None,
+        help="导出格式 (不指定则不导出文件)",
+    )
+    p_hi.add_argument("--output", help="导入结果导出路径")
+
+    p_hrb = sub.add_parser("handoff-rollback", help="交接包撤销:回退本次导入实际写入的文件，保留审计日志")
+    p_hrb.add_argument("package_id", help="要撤销的交接包 ID")
+    p_hrb.add_argument(
+        "--format",
+        choices=["json", "csv"],
+        default=None,
+        help="导出格式 (不指定则不导出文件)",
+    )
+    p_hrb.add_argument("--output", help="撤销结果导出路径")
+
+    p_hh = sub.add_parser("handoff-history", help="交接包历史:查询交接包创建、导入、撤销操作记录")
+    p_hh.add_argument(
+        "--package-id",
+        default=None,
+        help="按交接包 ID 筛选",
+    )
+    p_hh.add_argument(
+        "--format",
+        choices=["json", "csv"],
+        default=None,
+        help="导出格式 (不指定则不导出文件)",
+    )
+    p_hh.add_argument("--output", help="历史记录导出路径")
+
     return parser
 
 
@@ -1125,6 +1692,12 @@ def main(argv: list[str] | None = None) -> int:
         "heal": cmd_heal,
         "report": cmd_report,
         "migrate": cmd_migrate,
+        "handoff-preview": cmd_handoff_preview,
+        "handoff-create": cmd_handoff_create,
+        "handoff-verify": cmd_handoff_verify,
+        "handoff-import": cmd_handoff_import,
+        "handoff-rollback": cmd_handoff_rollback,
+        "handoff-history": cmd_handoff_history,
     }
 
     handler = dispatch.get(args.command)
