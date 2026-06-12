@@ -1,0 +1,16 @@
+operator: reviewer
+intake_dir: D:\workSpace\AI__SPACE\zzz-00030\review_case_a02_host_verify\intake
+target_base: D:\workSpace\AI__SPACE\zzz-00030\review_case_a02_host_verify\target
+rules:
+  action: move
+  case_number_pattern: (20\d{2}-[A-Z]\d{3})-\d{3}\.pdf$
+  target_structure: '{case_number}'
+  allowed_extensions:
+  - .pdf
+  max_filename_length: 80
+  forbidden_chars: '[<>:"/\\|?*#]'
+batch:
+  max_size: 100
+  stop_on_failure_ratio: 0.9
+logging:
+  dir: D:\workSpace\AI__SPACE\zzz-00030\review_case_a02_host_verify\data

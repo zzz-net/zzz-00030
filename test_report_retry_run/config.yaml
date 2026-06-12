@@ -1,0 +1,16 @@
+batch:
+  max_size: 100
+  stop_on_failure_ratio: 0.9
+intake_dir: D:\workSpace\AI__SPACE\zzz-00030\test_report_retry_run\intake
+logging:
+  dir: D:\workSpace\AI__SPACE\zzz-00030\test_report_retry_run\data
+operator: tester
+rules:
+  action: move
+  allowed_extensions:
+  - .pdf
+  case_number_pattern: (20\d{2}-[A-Z]\d{3})-\d{3}\.pdf$
+  forbidden_chars: '[<>:"/\\|?*#]'
+  max_filename_length: 80
+  target_structure: '{case_number}'
+target_base: D:\workSpace\AI__SPACE\zzz-00030\test_report_retry_run\target

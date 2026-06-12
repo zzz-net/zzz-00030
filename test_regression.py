@@ -275,11 +275,13 @@ def main() -> int:
 
     assert_eq(rollback_result["status"], "done", "rollback 返回状态")
     assert_eq(rollback_result["batch_id"], batch_id, "rollback batch_id")
-    assert_eq(rollback_result["rolled_back_ok"], 1, "rollback 成功数量")
+    assert_eq(rollback_result["rolled_back_ok"], 2, "rollback 成功数量（初始成功 + retry 补救成功的同一批次动作都回滚）")
     assert_eq(rollback_result["rolled_back_fail"], 0, "rollback 失败数量")
 
     assert_eq(os.path.exists(valid_target), False, "回滚后 Step1 目标文件应不存在")
     assert_eq(os.path.exists(valid_a), True, "回滚后 Step1 文件回到 intake")
+    assert_eq(os.path.exists(occupied_final_target), False, "回滚后 retry 补救成功的目标文件也应不存在")
+    assert_eq(os.path.exists(occupied_src), True, "回滚后 retry 补救成功的文件也回到 intake")
 
     history_after = load_json(BATCH_HISTORY_FILE)
     rolled_back = [b for b in history_after if b["batch_id"] == batch_id][0]
@@ -292,8 +294,8 @@ def main() -> int:
         "回滚后 valid_a 的队列状态 = rolled_back（不能是 done）"
     )
     assert_eq(
-        queue_by_path_rb[occupied_src]["status"], "done",
-        "retry 成功的占用文件不在该批次，队列仍为 done"
+        queue_by_path_rb[occupied_src]["status"], "rolled_back",
+        "retry 成功的占用文件属于同一批次，回滚后队列状态 = rolled_back"
     )
     assert_eq(
         queue_by_path_rb[illegal]["status"], "failed",
@@ -302,12 +304,12 @@ def main() -> int:
 
     actions_after_rollback = read_jsonl(ACTION_LOG)
     step1_actions = [a for a in actions_after_rollback if a.get("batch_id") == batch_id]
-    assert_eq(len(step1_actions), 1, "该批次有 1 条 action 记录")
-    assert_eq(step1_actions[0]["rolled_back"], True, "action_log 中 rolled_back=True")
-    assert_eq(
-        step1_actions[0]["source"], valid_a,
-        "action_log source 与队列 path 对应"
-    )
+    assert_eq(len(step1_actions), 2, "该批次有 2 条 action 记录（初始成功 + retry 补救成功）")
+    for a in step1_actions:
+        assert_eq(a["rolled_back"], True, "action_log 中该批次所有 rolled_back=True")
+    step1_sources = {a["source"] for a in step1_actions}
+    assert_in(valid_a, step1_sources, "action_log source 包含 valid_a")
+    assert_in(occupied_src, step1_sources, "action_log source 包含 retry 补救成功的 occupied_src")
 
     # ---------- Step 8: 测试 JSON/CSV 导出 ----------
     step("Step 8: 测试 JSON/CSV 导出")
@@ -356,8 +358,8 @@ def main() -> int:
         "重启后 processing_queue: 正常文件 rolled_back（回滚后不能是 done）"
     )
     assert_eq(
-        queue_statuses[occupied_src], "done",
-        "重启后 processing_queue: 占用文件 done（retry 成功未回滚）"
+        queue_statuses[occupied_src], "rolled_back",
+        "重启后 processing_queue: 占用文件 rolled_back（retry 成功归回批次，回滚时同步更新）"
     )
     assert_eq(
         queue_statuses[illegal], "failed",

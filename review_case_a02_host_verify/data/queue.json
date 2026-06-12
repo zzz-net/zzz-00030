@@ -1,0 +1,20 @@
+[
+  {
+    "path": "D:\\workSpace\\AI__SPACE\\zzz-00030\\review_case_a02_host_verify\\intake\\2026-R100-001.pdf",
+    "case_number": "2026-R100",
+    "status": "done",
+    "filename": "2026-R100-001.pdf"
+  },
+  {
+    "path": "D:\\workSpace\\AI__SPACE\\zzz-00030\\review_case_a02_host_verify\\intake\\2026-R100-002.pdf",
+    "case_number": "2026-R100",
+    "status": "done",
+    "filename": "2026-R100-002.pdf"
+  },
+  {
+    "path": "D:\\workSpace\\AI__SPACE\\zzz-00030\\review_case_a02_host_verify\\intake\\bad name#.pdf",
+    "case_number": null,
+    "status": "failed",
+    "filename": "bad name#.pdf"
+  }
+]

@@ -168,6 +168,7 @@ def main() -> int:
         HealthChecker,
         Severity,
     )
+    from scan_sorter.models import ActionRecord, ActionType
 
     reset_test_dirs()
     write_config(CONFIG_PATH)
@@ -214,7 +215,7 @@ def main() -> int:
 
     rollback_result = mgr2.rollback(batch_id)
     assert_eq(rollback_result["status"], "done", "rollback 状态")
-    assert_eq(rollback_result["rolled_back_ok"], 1, "rollback 成功")
+    assert_eq(rollback_result["rolled_back_ok"], 2, "rollback 成功（初始成功 + retry 补救成功的同一批次动作都回滚）")
 
     step("Phase 1e: 基线 healthcheck — 正常状态应无严重问题")
 
@@ -229,9 +230,21 @@ def main() -> int:
     step("Phase 2a: 冲突1 — 将已 done 文件复制回 intake (模拟移动失败但队列误标 done)")
 
     done_file_in_target = os.path.join(TARGET_DIR, "2024-B002", "2024-B002-001.pdf")
-    if os.path.exists(done_file_in_target):
-        shutil.copy2(done_file_in_target, occupied_src)
-        print(f"  复制目标文件回 intake: {occupied_src}")
+    mgr_reset = BatchManager(config)
+    mgr_reset.processing_queue.mark_done(occupied_src)
+    os.makedirs(os.path.dirname(done_file_in_target), exist_ok=True)
+    shutil.copy2(occupied_src, done_file_in_target)
+    print(f"  手动: occupied_src 队列 -> done, 并复制到 target: {done_file_in_target}")
+    assert_eq(os.path.exists(done_file_in_target), True, "target 上应有 2024-B002-001.pdf 副本")
+
+    mgr_reset.action_logger.log(ActionRecord(
+        source=occupied_src,
+        destination=done_file_in_target,
+        action_type=ActionType.MOVE,
+        operator="hc_test_op",
+        case_number="2024-B002",
+    ))
+    print(f"  手动: 写入 action_log 记录（不 rolled_back，destination 在 target 下）")
 
     step("Phase 2b: 冲突2 — 添加一个 done 条目但目标文件不存在")
 
@@ -243,7 +256,6 @@ def main() -> int:
     c003_target_dir = os.path.join(TARGET_DIR, "2024-C003")
     os.makedirs(c003_target_dir, exist_ok=True)
     c003_target = os.path.join(c003_target_dir, "2024-C003-001.pdf")
-    from scan_sorter.models import ActionRecord, ActionType
     mgr_extra.action_logger.log(ActionRecord(
         source=extra_file,
         destination=c003_target,

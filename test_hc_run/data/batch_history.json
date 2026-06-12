@@ -1,18 +1,22 @@
 [
   {
-    "batch_id": "f6c2b2f2",
-    "created_at": "2026-06-12T07:41:18.095575",
+    "batch_id": "7e738c81",
+    "created_at": "2026-06-12T08:07:02.104841",
     "operator": "hc_test_op",
     "status": "rolled_back",
     "total": 3,
     "succeeded": 1,
     "failed": 2,
     "action_ids": [
-      "2703e9e4d4f0"
+      "7cb77997e816"
     ],
     "error_file_paths": [
       "D:\\workSpace\\AI__SPACE\\zzz-00030\\test_hc_run\\intake\\2024-B002-001.pdf",
       "D:\\workSpace\\AI__SPACE\\zzz-00030\\test_hc_run\\intake\\bad file#name.pdf"
-    ]
+    ],
+    "error_details": {
+      "D:\\workSpace\\AI__SPACE\\zzz-00030\\test_hc_run\\intake\\2024-B002-001.pdf": "目标路径已被占用: D:\\workSpace\\AI__SPACE\\zzz-00030\\test_hc_run\\target\\2024-B002\\2024-B002-001.pdf",
+      "D:\\workSpace\\AI__SPACE\\zzz-00030\\test_hc_run\\intake\\bad file#name.pdf": "文件名包含非法字符; 无法从文件名解析案卷号"
+    }
   }
 ]

@@ -1,16 +1,17 @@
 {
   "batches": [
     {
-      "batch_id": "3d4620f5",
+      "batch_id": "9b854a7b",
       "status": "partial_failed",
-      "created_at": "2026-06-12T07:41:18.115092",
+      "created_at": "2026-06-12T08:04:09.444702",
       "operator": "report_test_op",
       "total": 5,
       "succeeded": 2,
       "failed": 3,
       "target_dirs": [
         "D:\\workSpace\\AI__SPACE\\zzz-00030\\test_report_run\\target\\2024-A001",
-        "D:\\workSpace\\AI__SPACE\\zzz-00030\\test_report_run\\target\\2024-B002"
+        "D:\\workSpace\\AI__SPACE\\zzz-00030\\test_report_run\\target\\2024-B002",
+        "D:\\workSpace\\AI__SPACE\\zzz-00030\\test_report_run\\target\\2024-C003"
       ],
       "success_files": [
         {
@@ -18,28 +19,44 @@
           "source": "D:\\workSpace\\AI__SPACE\\zzz-00030\\test_report_run\\intake\\2024-A001-001.pdf",
           "destination": "D:\\workSpace\\AI__SPACE\\zzz-00030\\test_report_run\\target\\2024-A001\\2024-A001-001.pdf",
           "case_number": "2024-A001",
-          "timestamp": "2026-06-12T07:41:18.116056"
+          "timestamp": "2026-06-12T08:04:09.447672"
         },
         {
           "filename": "2024-B002-001.pdf",
           "source": "D:\\workSpace\\AI__SPACE\\zzz-00030\\test_report_run\\intake\\2024-B002-001.pdf",
           "destination": "D:\\workSpace\\AI__SPACE\\zzz-00030\\test_report_run\\target\\2024-B002\\2024-B002-001.pdf",
           "case_number": "2024-B002",
-          "timestamp": "2026-06-12T07:41:18.117036"
+          "timestamp": "2026-06-12T08:04:09.450603"
+        },
+        {
+          "filename": "2024-A001-002.pdf",
+          "source": "D:\\workSpace\\AI__SPACE\\zzz-00030\\test_report_run\\intake\\2024-A001-002.pdf",
+          "destination": "D:\\workSpace\\AI__SPACE\\zzz-00030\\test_report_run\\target\\2024-A001\\2024-A001-002.pdf",
+          "case_number": "2024-A001",
+          "timestamp": "2026-06-12T08:04:09.748604"
+        },
+        {
+          "filename": "2024-C003-001.pdf",
+          "source": "D:\\workSpace\\AI__SPACE\\zzz-00030\\test_report_run\\intake\\2024-C003-001.pdf",
+          "destination": "D:\\workSpace\\AI__SPACE\\zzz-00030\\test_report_run\\target\\2024-C003\\2024-C003-001.pdf",
+          "case_number": "2024-C003",
+          "timestamp": "2026-06-12T08:04:09.760158"
         }
       ],
       "failed_files": [
         {
           "filename": "2024-A001-002.pdf",
           "path": "D:\\workSpace\\AI__SPACE\\zzz-00030\\test_report_run\\intake\\2024-A001-002.pdf",
-          "error": "未知错误",
+          "error": "目标路径已被占用: D:\\workSpace\\AI__SPACE\\zzz-00030\\test_report_run\\target\\2024-A001\\2024-A001-002.pdf",
+          "recovered": true,
           "in_error_queue": false,
           "retry_count": 0
         },
         {
           "filename": "2024-C003-001.pdf",
           "path": "D:\\workSpace\\AI__SPACE\\zzz-00030\\test_report_run\\intake\\2024-C003-001.pdf",
-          "error": "未知错误",
+          "error": "目标路径已被占用: D:\\workSpace\\AI__SPACE\\zzz-00030\\test_report_run\\target\\2024-C003\\2024-C003-001.pdf",
+          "recovered": true,
           "in_error_queue": false,
           "retry_count": 0
         },
@@ -47,15 +64,16 @@
           "filename": "bad file#name.pdf",
           "path": "D:\\workSpace\\AI__SPACE\\zzz-00030\\test_report_run\\intake\\bad file#name.pdf",
           "error": "文件名包含非法字符; 无法从文件名解析案卷号",
+          "recovered": false,
           "in_error_queue": true,
           "retry_count": 0
         }
       ]
     },
     {
-      "batch_id": "2549de46",
+      "batch_id": "311d1c15",
       "status": "partial_failed",
-      "created_at": "2026-06-12T07:41:18.182937",
+      "created_at": "2026-06-12T08:04:09.835350",
       "operator": "report_test_op",
       "total": 2,
       "succeeded": 1,
@@ -69,7 +87,7 @@
           "source": "D:\\workSpace\\AI__SPACE\\zzz-00030\\test_report_run\\intake\\2024-D004-001.pdf",
           "destination": "D:\\workSpace\\AI__SPACE\\zzz-00030\\test_report_run\\target_v2\\2024-D004\\2024-D004-001.pdf",
           "case_number": "2024-D004",
-          "timestamp": "2026-06-12T07:41:18.183887"
+          "timestamp": "2026-06-12T08:04:09.836798"
         }
       ],
       "failed_files": [
@@ -77,6 +95,7 @@
           "filename": "bad file#name.pdf",
           "path": "D:\\workSpace\\AI__SPACE\\zzz-00030\\test_report_run\\intake\\bad file#name.pdf",
           "error": "文件名包含非法字符; 无法从文件名解析案卷号",
+          "recovered": false,
           "in_error_queue": true,
           "retry_count": 0
         }
@@ -92,14 +111,14 @@
       "retry_count": 0,
       "max_retries": 3,
       "case_number": null,
-      "batch_id": null
+      "batch_id": "311d1c15"
     }
   ],
   "healthcheck_summary": {
-    "last_check_time": "2026-06-12T07:41:18.212716",
-    "total_findings": 1,
+    "last_check_time": "2026-06-12T08:04:09.961880",
+    "total_findings": 2,
     "critical_count": 0,
-    "warning_count": 1,
+    "warning_count": 2,
     "info_count": 0,
     "fixable_count": 0
   },
@@ -113,8 +132,8 @@
   },
   "warnings": [
     "有 1 个失败项可重试",
-    "最近一次健康检查发现 1 个问题"
+    "最近一次健康检查发现 2 个问题"
   ],
   "errors": [],
-  "generated_at": "2026-06-12T07:41:18.219054"
+  "generated_at": "2026-06-12T08:04:10.006230"
 }

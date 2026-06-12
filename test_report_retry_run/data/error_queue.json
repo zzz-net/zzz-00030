@@ -1,0 +1,13 @@
+[
+  {
+    "path": "D:\\workSpace\\AI__SPACE\\zzz-00030\\test_report_retry_run\\intake\\bad file#name.pdf",
+    "filename": "bad file#name.pdf",
+    "case_number": null,
+    "error": "无法从文件名解析案卷号",
+    "retry_count": 1,
+    "max_retries": 3,
+    "added_at": "2026-06-12T08:07:02.291347",
+    "last_retry_at": "2026-06-12T08:07:02.730802",
+    "batch_id": "de13f797"
+  }
+]

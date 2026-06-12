@@ -115,6 +115,7 @@ class BatchRecord:
     failed: int = 0
     action_ids: list = field(default_factory=list)
     error_file_paths: list = field(default_factory=list)
+    error_details: dict = field(default_factory=dict)
 
     def to_dict(self) -> dict:
         return {
@@ -127,6 +128,7 @@ class BatchRecord:
             "failed": self.failed,
             "action_ids": self.action_ids,
             "error_file_paths": self.error_file_paths,
+            "error_details": self.error_details,
         }
 
     @classmethod
@@ -141,6 +143,7 @@ class BatchRecord:
             failed=d.get("failed", 0),
             action_ids=d.get("action_ids", []),
             error_file_paths=d.get("error_file_paths", []),
+            error_details=d.get("error_details", {}),
         )
 
 

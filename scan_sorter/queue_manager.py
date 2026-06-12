@@ -23,6 +23,8 @@ class ErrorQueue:
             existing.error = item.error
             existing.retry_count = item.retry_count
             existing.last_retry_at = item.last_retry_at
+            if item.batch_id is not None:
+                existing.batch_id = item.batch_id
         else:
             self._items.append(item)
         self._save()

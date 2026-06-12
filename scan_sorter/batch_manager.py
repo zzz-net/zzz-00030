@@ -70,16 +70,19 @@ class BatchManager:
             )
 
         precheck_error_paths: list[str] = []
+        error_details: dict[str, str] = {}
         for sf, pr in zip(files, results):
             if not pr.ok:
                 self.processing_queue.mark_failed(sf.path)
                 precheck_error_paths.append(sf.path)
+                err_msg = "; ".join(pr.errors)
+                error_details[sf.path] = err_msg
                 self.error_queue.add(
                     ErrorItem(
                         path=sf.path,
                         filename=sf.filename,
                         case_number=sf.case_number,
-                        error="; ".join(pr.errors),
+                        error=err_msg,
                         retry_count=0,
                     )
                 )
@@ -100,6 +103,19 @@ class BatchManager:
             status=BatchStatus.OPEN,
             total=len(files),
         )
+
+        for p in precheck_error_paths:
+            existing = self.error_queue.find_by_path(p)
+            if existing:
+                existing.batch_id = batch.batch_id
+                self.error_queue.add(ErrorItem(
+                    path=existing.path,
+                    filename=existing.filename,
+                    case_number=existing.case_number,
+                    error=existing.error,
+                    retry_count=existing.retry_count,
+                    batch_id=batch.batch_id,
+                ))
 
         succeeded = 0
         exec_failed = 0
@@ -126,13 +142,15 @@ class BatchManager:
             else:
                 exec_failed += 1
                 error_file_paths.append(sf.path)
+                err_msg = err or "执行失败"
+                error_details[sf.path] = err_msg
                 self.processing_queue.mark_failed(sf.path)
                 self.error_queue.add(
                     ErrorItem(
                         path=sf.path,
                         filename=sf.filename,
                         case_number=sf.case_number,
-                        error=err or "执行失败",
+                        error=err_msg,
                         batch_id=batch.batch_id,
                     )
                 )
@@ -154,6 +172,7 @@ class BatchManager:
         batch.failed = total_failed
         batch.action_ids = action_ids
         batch.error_file_paths = error_file_paths
+        batch.error_details = error_details
 
         self._batch_history.append(batch)
         self._save_history()
@@ -206,6 +225,7 @@ class BatchManager:
                 self.processing_queue.mark_done(item.path)
 
                 record = ActionRecord(
+                    batch_id=item.batch_id or "",
                     operator=self.config.operator,
                     source=sf.path,
                     destination=sf.target_path or "",

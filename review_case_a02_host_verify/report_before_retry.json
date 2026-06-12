@@ -1,0 +1,94 @@
+{
+  "batches": [
+    {
+      "batch_id": "d87a3458",
+      "status": "partial_failed",
+      "created_at": "2026-06-12T08:07:59.617643",
+      "operator": "reviewer",
+      "total": 3,
+      "succeeded": 1,
+      "failed": 2,
+      "target_dirs": [
+        "D:\\workSpace\\AI__SPACE\\zzz-00030\\review_case_a02_host_verify\\target\\2026-R100"
+      ],
+      "success_files": [
+        {
+          "filename": "2026-R100-001.pdf",
+          "source": "D:\\workSpace\\AI__SPACE\\zzz-00030\\review_case_a02_host_verify\\intake\\2026-R100-001.pdf",
+          "destination": "D:\\workSpace\\AI__SPACE\\zzz-00030\\review_case_a02_host_verify\\target\\2026-R100\\2026-R100-001.pdf",
+          "case_number": "2026-R100",
+          "timestamp": "2026-06-12T08:07:59.619657"
+        }
+      ],
+      "failed_files": [
+        {
+          "filename": "2026-R100-002.pdf",
+          "path": "D:\\workSpace\\AI__SPACE\\zzz-00030\\review_case_a02_host_verify\\intake\\2026-R100-002.pdf",
+          "error": "目标路径已被占用: D:\\workSpace\\AI__SPACE\\zzz-00030\\review_case_a02_host_verify\\target\\2026-R100\\2026-R100-002.pdf",
+          "recovered": false,
+          "in_error_queue": true,
+          "retry_count": 0
+        },
+        {
+          "filename": "bad name#.pdf",
+          "path": "D:\\workSpace\\AI__SPACE\\zzz-00030\\review_case_a02_host_verify\\intake\\bad name#.pdf",
+          "error": "无法从文件名解析案卷号",
+          "recovered": false,
+          "in_error_queue": true,
+          "retry_count": 0
+        }
+      ]
+    }
+  ],
+  "conflicts": [
+    {
+      "filename": "2026-R100-002.pdf",
+      "intake_path": "D:\\workSpace\\AI__SPACE\\zzz-00030\\review_case_a02_host_verify\\intake\\2026-R100-002.pdf",
+      "target_path": "D:\\workSpace\\AI__SPACE\\zzz-00030\\review_case_a02_host_verify\\target\\2026-R100\\2026-R100-002.pdf",
+      "in_queue": true,
+      "in_error_queue": true
+    }
+  ],
+  "retryable_items": [
+    {
+      "filename": "2026-R100-002.pdf",
+      "path": "D:\\workSpace\\AI__SPACE\\zzz-00030\\review_case_a02_host_verify\\intake\\2026-R100-002.pdf",
+      "error": "目标路径已被占用: D:\\workSpace\\AI__SPACE\\zzz-00030\\review_case_a02_host_verify\\target\\2026-R100\\2026-R100-002.pdf",
+      "retry_count": 0,
+      "max_retries": 3,
+      "case_number": "2026-R100",
+      "batch_id": "d87a3458"
+    },
+    {
+      "filename": "bad name#.pdf",
+      "path": "D:\\workSpace\\AI__SPACE\\zzz-00030\\review_case_a02_host_verify\\intake\\bad name#.pdf",
+      "error": "无法从文件名解析案卷号",
+      "retry_count": 0,
+      "max_retries": 3,
+      "case_number": null,
+      "batch_id": "d87a3458"
+    }
+  ],
+  "healthcheck_summary": {
+    "last_check_time": null,
+    "total_findings": 0,
+    "critical_count": 0,
+    "warning_count": 0,
+    "info_count": 0,
+    "fixable_count": 0
+  },
+  "config_info": {
+    "intake_dir": "D:\\workSpace\\AI__SPACE\\zzz-00030\\review_case_a02_host_verify\\intake",
+    "target_base": "D:\\workSpace\\AI__SPACE\\zzz-00030\\review_case_a02_host_verify\\target",
+    "target_structure": "{case_number}",
+    "operator": "reviewer",
+    "action": "move",
+    "logging_dir": "D:\\workSpace\\AI__SPACE\\zzz-00030\\review_case_a02_host_verify\\data"
+  },
+  "warnings": [
+    "发现 1 个文件名冲突（intake 和 target 同时存在同名文件）",
+    "有 2 个失败项可重试"
+  ],
+  "errors": [],
+  "generated_at": "2026-06-12T08:08:50.318152"
+}

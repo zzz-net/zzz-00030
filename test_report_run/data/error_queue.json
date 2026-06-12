@@ -6,8 +6,8 @@
     "error": "文件名包含非法字符; 无法从文件名解析案卷号",
     "retry_count": 0,
     "max_retries": 3,
-    "added_at": "2026-06-12T07:41:18.115092",
+    "added_at": "2026-06-12T08:04:09.443776",
     "last_retry_at": null,
-    "batch_id": null
+    "batch_id": "311d1c15"
   }
 ]

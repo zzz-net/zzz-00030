@@ -254,15 +254,26 @@ class ReportGenerator:
             if not a.rolled_back
         ]
 
+        recovered_sources = {
+            a.source for a in actions
+            if not a.rolled_back and a.source
+        }
+
         failed_files: list[dict] = []
         error_queue_paths = {e.path for e in self.error_queue.all()}
         for err_path in batch.error_file_paths:
             err_item = self.error_queue.find_by_path(err_path)
+            err_msg = batch.error_details.get(err_path) if batch.error_details else None
+            if err_msg is None and err_item:
+                err_msg = err_item.error
+            if err_msg is None:
+                err_msg = "未知错误"
             filename = os.path.basename(err_path)
             failed_files.append({
                 "filename": filename,
                 "path": err_path,
-                "error": err_item.error if err_item else "未知错误",
+                "error": err_msg,
+                "recovered": err_path in recovered_sources,
                 "in_error_queue": err_path in error_queue_paths,
                 "retry_count": err_item.retry_count if err_item else 0,
             })

@@ -1,35 +1,43 @@
 [
   {
-    "batch_id": "3d4620f5",
-    "created_at": "2026-06-12T07:41:18.115092",
+    "batch_id": "9b854a7b",
+    "created_at": "2026-06-12T08:04:09.444702",
     "operator": "report_test_op",
     "status": "partial_failed",
     "total": 5,
     "succeeded": 2,
     "failed": 3,
     "action_ids": [
-      "16bcc23c456d",
-      "9f963aaf7ba8"
+      "8d2c8d416d90",
+      "8ca74c3a5291"
     ],
     "error_file_paths": [
       "D:\\workSpace\\AI__SPACE\\zzz-00030\\test_report_run\\intake\\2024-A001-002.pdf",
       "D:\\workSpace\\AI__SPACE\\zzz-00030\\test_report_run\\intake\\2024-C003-001.pdf",
       "D:\\workSpace\\AI__SPACE\\zzz-00030\\test_report_run\\intake\\bad file#name.pdf"
-    ]
+    ],
+    "error_details": {
+      "D:\\workSpace\\AI__SPACE\\zzz-00030\\test_report_run\\intake\\2024-A001-002.pdf": "目标路径已被占用: D:\\workSpace\\AI__SPACE\\zzz-00030\\test_report_run\\target\\2024-A001\\2024-A001-002.pdf",
+      "D:\\workSpace\\AI__SPACE\\zzz-00030\\test_report_run\\intake\\2024-C003-001.pdf": "目标路径已被占用: D:\\workSpace\\AI__SPACE\\zzz-00030\\test_report_run\\target\\2024-C003\\2024-C003-001.pdf",
+      "D:\\workSpace\\AI__SPACE\\zzz-00030\\test_report_run\\intake\\bad file#name.pdf": "文件名包含非法字符; 无法从文件名解析案卷号"
+    }
   },
   {
-    "batch_id": "2549de46",
-    "created_at": "2026-06-12T07:41:18.182937",
+    "batch_id": "311d1c15",
+    "created_at": "2026-06-12T08:04:09.835350",
     "operator": "report_test_op",
     "status": "partial_failed",
     "total": 2,
     "succeeded": 1,
     "failed": 1,
     "action_ids": [
-      "7d8107af0009"
+      "2d2829c843a1"
     ],
     "error_file_paths": [
       "D:\\workSpace\\AI__SPACE\\zzz-00030\\test_report_run\\intake\\bad file#name.pdf"
-    ]
+    ],
+    "error_details": {
+      "D:\\workSpace\\AI__SPACE\\zzz-00030\\test_report_run\\intake\\bad file#name.pdf": "文件名包含非法字符; 无法从文件名解析案卷号"
+    }
   }
 ]

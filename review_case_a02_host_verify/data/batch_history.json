@@ -1,0 +1,22 @@
+[
+  {
+    "batch_id": "d87a3458",
+    "created_at": "2026-06-12T08:07:59.617643",
+    "operator": "reviewer",
+    "status": "partial_failed",
+    "total": 3,
+    "succeeded": 1,
+    "failed": 2,
+    "action_ids": [
+      "173fe202aa39"
+    ],
+    "error_file_paths": [
+      "D:\\workSpace\\AI__SPACE\\zzz-00030\\review_case_a02_host_verify\\intake\\2026-R100-002.pdf",
+      "D:\\workSpace\\AI__SPACE\\zzz-00030\\review_case_a02_host_verify\\intake\\bad name#.pdf"
+    ],
+    "error_details": {
+      "D:\\workSpace\\AI__SPACE\\zzz-00030\\review_case_a02_host_verify\\intake\\2026-R100-002.pdf": "目标路径已被占用: D:\\workSpace\\AI__SPACE\\zzz-00030\\review_case_a02_host_verify\\target\\2026-R100\\2026-R100-002.pdf",
+      "D:\\workSpace\\AI__SPACE\\zzz-00030\\review_case_a02_host_verify\\intake\\bad name#.pdf": "无法从文件名解析案卷号"
+    }
+  }
+]
