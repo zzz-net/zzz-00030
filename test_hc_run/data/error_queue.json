@@ -6,9 +6,9 @@
     "error": "文件名包含非法字符; 无法从文件名解析案卷号",
     "retry_count": 1,
     "max_retries": 3,
-    "added_at": "2026-06-12T09:25:42.362379",
-    "last_retry_at": "2026-06-12T09:25:42.400413",
-    "batch_id": "f53c5829"
+    "added_at": "2026-06-12T10:10:09.079611",
+    "last_retry_at": "2026-06-12T10:10:09.110814",
+    "batch_id": "865d30d9"
   },
   {
     "path": "D:\\workSpace\\AI__SPACE\\zzz-00030\\test_hc_run\\intake\\2024-B002-001.pdf",
@@ -17,7 +17,7 @@
     "error": "残留error_queue条目",
     "retry_count": 0,
     "max_retries": 3,
-    "added_at": "2026-06-12T09:25:42.448777",
+    "added_at": "2026-06-12T10:10:09.151306",
     "last_retry_at": null,
     "batch_id": null
   },
@@ -28,7 +28,7 @@
     "error": "heal修正:队列done但源文件和目标都不存在",
     "retry_count": 0,
     "max_retries": 3,
-    "added_at": "2026-06-12T09:25:42.681201",
+    "added_at": "2026-06-12T10:10:09.360803",
     "last_retry_at": null,
     "batch_id": null
   },
@@ -39,7 +39,7 @@
     "error": "heal修正:processing_queue为failed但error_queue缺失",
     "retry_count": 0,
     "max_retries": 3,
-    "added_at": "2026-06-12T09:25:42.838394",
+    "added_at": "2026-06-12T10:10:09.531303",
     "last_retry_at": null,
     "batch_id": null
   }

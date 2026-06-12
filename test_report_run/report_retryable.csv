@@ -1,4 +1,4 @@
 ﻿filename,path,error,retry_count,max_retries,case_number,batch_id
-2024-A001-002.pdf,D:\workSpace\AI__SPACE\zzz-00030\test_report_run\intake\2024-A001-002.pdf,目标路径已被占用: D:\workSpace\AI__SPACE\zzz-00030\test_report_run\target\2024-A001\2024-A001-002.pdf,0,3,2024-A001,460ba8ed
-2024-C003-001.pdf,D:\workSpace\AI__SPACE\zzz-00030\test_report_run\intake\2024-C003-001.pdf,目标路径已被占用: D:\workSpace\AI__SPACE\zzz-00030\test_report_run\target\2024-C003\2024-C003-001.pdf,0,3,2024-C003,460ba8ed
-bad file#name.pdf,D:\workSpace\AI__SPACE\zzz-00030\test_report_run\intake\bad file#name.pdf,文件名包含非法字符; 无法从文件名解析案卷号,0,3,,460ba8ed
+2024-A001-002.pdf,D:\workSpace\AI__SPACE\zzz-00030\test_report_run\intake\2024-A001-002.pdf,目标路径已被占用: D:\workSpace\AI__SPACE\zzz-00030\test_report_run\target\2024-A001\2024-A001-002.pdf,0,3,2024-A001,d298721d
+2024-C003-001.pdf,D:\workSpace\AI__SPACE\zzz-00030\test_report_run\intake\2024-C003-001.pdf,目标路径已被占用: D:\workSpace\AI__SPACE\zzz-00030\test_report_run\target\2024-C003\2024-C003-001.pdf,0,3,2024-C003,d298721d
+bad file#name.pdf,D:\workSpace\AI__SPACE\zzz-00030\test_report_run\intake\bad file#name.pdf,文件名包含非法字符; 无法从文件名解析案卷号,0,3,,d298721d

@@ -269,6 +269,7 @@ def _analyze_file_pattern_item(
     item_type: MigrationItemType,
     record_id: str,
     state: MigrationState,
+    field_name: str = "file_pattern_match",
 ) -> Optional[MigrationItem]:
     if not diff.file_pattern_changed or not filename:
         return None
@@ -280,14 +281,14 @@ def _analyze_file_pattern_item(
         return None
 
     fingerprint = compute_fingerprint(
-        item_type.value, record_id, "file_pattern_match", filename
+        item_type.value, record_id, field_name, filename
     )
 
     if state.is_migrated(fingerprint):
         return MigrationItem(
             item_type=item_type,
             record_id=record_id,
-            field_name="file_pattern_match",
+            field_name=field_name,
             old_value="匹配" if old_match else "不匹配",
             new_value="匹配" if new_match else "不匹配",
             action=MigrationAction.SKIPPED,
@@ -299,7 +300,7 @@ def _analyze_file_pattern_item(
         return MigrationItem(
             item_type=item_type,
             record_id=record_id,
-            field_name="file_pattern_match",
+            field_name=field_name,
             old_value="匹配",
             new_value="不匹配",
             action=MigrationAction.MANUAL,
@@ -312,7 +313,7 @@ def _analyze_file_pattern_item(
         return MigrationItem(
             item_type=item_type,
             record_id=record_id,
-            field_name="file_pattern_match",
+            field_name=field_name,
             old_value="不匹配",
             new_value="匹配",
             action=MigrationAction.AUTO_MIGRATE,
@@ -573,6 +574,19 @@ def analyze_batch_history(
                     action=MigrationAction.AUTO_MIGRATE,
                     fingerprint=fp,
                 ))
+
+        for fidx, file_path in enumerate(batch.error_file_paths or []):
+            filename = os.path.basename(file_path) if file_path else ""
+            fp_item = _analyze_file_pattern_item(
+                filename,
+                diff,
+                MigrationItemType.BATCH_HISTORY,
+                record_id,
+                state,
+                field_name=f"error_file_{fidx}_pattern_match",
+            )
+            if fp_item:
+                items.append(fp_item)
 
     return items
 
