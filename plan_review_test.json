@@ -1,0 +1,49 @@
+{
+  "total": 2,
+  "will_succeed": 0,
+  "will_fail": 2,
+  "warnings": 4,
+  "items": [
+    {
+      "filename": "bad file#name.pdf",
+      "path": "D:\\workSpace\\AI__SPACE\\zzz-00030\\samples\\intake\\bad file#name.pdf",
+      "case_number": null,
+      "target_dir": null,
+      "target_path": null,
+      "action": "fail_precheck",
+      "will_succeed": false,
+      "errors": [
+        "文件名包含非法字符（仅允许字母、数字、横线、下划线、点）",
+        "无法从文件名解析案卷号"
+      ],
+      "warnings": [
+        "文件已在错误队列中",
+        "文件已在处理队列中"
+      ],
+      "in_processing_queue": true,
+      "in_error_queue": true,
+      "target_exists": false,
+      "action_type": "move"
+    },
+    {
+      "filename": "unparseable_document.pdf",
+      "path": "D:\\workSpace\\AI__SPACE\\zzz-00030\\samples\\intake\\unparseable_document.pdf",
+      "case_number": null,
+      "target_dir": null,
+      "target_path": null,
+      "action": "fail_precheck",
+      "will_succeed": false,
+      "errors": [
+        "无法从文件名解析案卷号"
+      ],
+      "warnings": [
+        "文件已在错误队列中",
+        "文件已在处理队列中"
+      ],
+      "in_processing_queue": true,
+      "in_error_queue": true,
+      "target_exists": false,
+      "action_type": "move"
+    }
+  ]
+}

@@ -1,0 +1,32 @@
+[
+  {
+    "path": "D:\\workSpace\\AI__SPACE\\zzz-00030\\reviewer_plan_case\\intake\\2026-R100-001.pdf",
+    "case_number": "2026-R100",
+    "status": "done",
+    "filename": "2026-R100-001.pdf"
+  },
+  {
+    "path": "D:\\workSpace\\AI__SPACE\\zzz-00030\\reviewer_plan_case\\intake\\2026-R100-002.pdf",
+    "case_number": "2026-R100",
+    "status": "done",
+    "filename": "2026-R100-002.pdf"
+  },
+  {
+    "path": "D:\\workSpace\\AI__SPACE\\zzz-00030\\reviewer_plan_case\\intake\\2026-R200-001.pdf",
+    "case_number": "2026-R200",
+    "status": "done",
+    "filename": "2026-R200-001.pdf"
+  },
+  {
+    "path": "D:\\workSpace\\AI__SPACE\\zzz-00030\\reviewer_plan_case\\intake\\2026-R300-001.pdf",
+    "case_number": "2026-R300",
+    "status": "failed",
+    "filename": "2026-R300-001.pdf"
+  },
+  {
+    "path": "D:\\workSpace\\AI__SPACE\\zzz-00030\\reviewer_plan_case\\intake\\bad file#name.pdf",
+    "case_number": null,
+    "status": "failed",
+    "filename": "bad file#name.pdf"
+  }
+]

@@ -30,6 +30,15 @@ class BatchStatus(enum.Enum):
     ROLLED_BACK = "rolled_back"
 
 
+class PlanAction(enum.Enum):
+    ARCHIVE = "archive"
+    SKIP_ERROR_QUEUE = "skip_error_queue"
+    SKIP_QUEUE = "skip_queue"
+    FAIL_PRECHECK = "fail_precheck"
+    FAIL_TARGET_CONFLICT = "fail_target_conflict"
+    FAIL_DUPLICATE = "fail_duplicate"
+
+
 @dataclass
 class ScanFile:
     path: str
@@ -206,4 +215,56 @@ class PrecheckResult:
             "case_number": self.case_number,
             "target_dir": self.target_dir,
             "target_path": self.target_path,
+        }
+
+
+@dataclass
+class DryRunPlanItem:
+    filename: str
+    path: str
+    case_number: Optional[str] = None
+    target_dir: Optional[str] = None
+    target_path: Optional[str] = None
+    action: PlanAction = PlanAction.ARCHIVE
+    will_succeed: bool = True
+    errors: list = field(default_factory=list)
+    warnings: list = field(default_factory=list)
+    in_processing_queue: bool = False
+    in_error_queue: bool = False
+    target_exists: bool = False
+    action_type: str = "move"
+
+    def to_dict(self) -> dict:
+        return {
+            "filename": self.filename,
+            "path": self.path,
+            "case_number": self.case_number,
+            "target_dir": self.target_dir,
+            "target_path": self.target_path,
+            "action": self.action.value,
+            "will_succeed": self.will_succeed,
+            "errors": self.errors,
+            "warnings": self.warnings,
+            "in_processing_queue": self.in_processing_queue,
+            "in_error_queue": self.in_error_queue,
+            "target_exists": self.target_exists,
+            "action_type": self.action_type,
+        }
+
+
+@dataclass
+class DryRunResult:
+    items: list = field(default_factory=list)
+    total: int = 0
+    will_succeed: int = 0
+    will_fail: int = 0
+    warnings: int = 0
+
+    def to_dict(self) -> dict:
+        return {
+            "total": self.total,
+            "will_succeed": self.will_succeed,
+            "will_fail": self.will_fail,
+            "warnings": self.warnings,
+            "items": [item.to_dict() for item in self.items],
         }

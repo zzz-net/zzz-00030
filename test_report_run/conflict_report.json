@@ -1,9 +1,9 @@
 {
   "batches": [
     {
-      "batch_id": "974487eb",
+      "batch_id": "52cb0ecc",
       "status": "partial_failed",
-      "created_at": "2026-06-12T13:05:02.331579",
+      "created_at": "2026-06-12T14:07:54.422696",
       "operator": "report_test_op",
       "total": 5,
       "succeeded": 2,
@@ -19,28 +19,28 @@
           "source": "D:\\workSpace\\AI__SPACE\\zzz-00030\\test_report_run\\intake\\2024-A001-001.pdf",
           "destination": "D:\\workSpace\\AI__SPACE\\zzz-00030\\test_report_run\\target\\2024-A001\\2024-A001-001.pdf",
           "case_number": "2024-A001",
-          "timestamp": "2026-06-12T13:05:02.336932"
+          "timestamp": "2026-06-12T14:07:54.426031"
         },
         {
           "filename": "2024-B002-001.pdf",
           "source": "D:\\workSpace\\AI__SPACE\\zzz-00030\\test_report_run\\intake\\2024-B002-001.pdf",
           "destination": "D:\\workSpace\\AI__SPACE\\zzz-00030\\test_report_run\\target\\2024-B002\\2024-B002-001.pdf",
           "case_number": "2024-B002",
-          "timestamp": "2026-06-12T13:05:02.340899"
+          "timestamp": "2026-06-12T14:07:54.429447"
         },
         {
           "filename": "2024-A001-002.pdf",
           "source": "D:\\workSpace\\AI__SPACE\\zzz-00030\\test_report_run\\intake\\2024-A001-002.pdf",
           "destination": "D:\\workSpace\\AI__SPACE\\zzz-00030\\test_report_run\\target\\2024-A001\\2024-A001-002.pdf",
           "case_number": "2024-A001",
-          "timestamp": "2026-06-12T13:05:02.682131"
+          "timestamp": "2026-06-12T14:07:54.737968"
         },
         {
           "filename": "2024-C003-001.pdf",
           "source": "D:\\workSpace\\AI__SPACE\\zzz-00030\\test_report_run\\intake\\2024-C003-001.pdf",
           "destination": "D:\\workSpace\\AI__SPACE\\zzz-00030\\test_report_run\\target\\2024-C003\\2024-C003-001.pdf",
           "case_number": "2024-C003",
-          "timestamp": "2026-06-12T13:05:02.686691"
+          "timestamp": "2026-06-12T14:07:54.741440"
         }
       ],
       "failed_files": [
@@ -71,9 +71,9 @@
       ]
     },
     {
-      "batch_id": "f31ffeb8",
+      "batch_id": "5fc10718",
       "status": "partial_failed",
-      "created_at": "2026-06-12T13:05:02.749660",
+      "created_at": "2026-06-12T14:07:54.799515",
       "operator": "report_test_op",
       "total": 2,
       "succeeded": 1,
@@ -87,7 +87,7 @@
           "source": "D:\\workSpace\\AI__SPACE\\zzz-00030\\test_report_run\\intake\\2024-D004-001.pdf",
           "destination": "D:\\workSpace\\AI__SPACE\\zzz-00030\\test_report_run\\target_v2\\2024-D004\\2024-D004-001.pdf",
           "case_number": "2024-D004",
-          "timestamp": "2026-06-12T13:05:02.752032"
+          "timestamp": "2026-06-12T14:07:54.803445"
         }
       ],
       "failed_files": [
@@ -119,11 +119,11 @@
       "retry_count": 0,
       "max_retries": 3,
       "case_number": null,
-      "batch_id": "f31ffeb8"
+      "batch_id": "5fc10718"
     }
   ],
   "healthcheck_summary": {
-    "last_check_time": "2026-06-12T13:05:02.889858",
+    "last_check_time": "2026-06-12T14:07:54.955834",
     "total_findings": 2,
     "critical_count": 0,
     "warning_count": 2,
@@ -144,5 +144,5 @@
     "最近一次健康检查发现 2 个问题"
   ],
   "errors": [],
-  "generated_at": "2026-06-12T13:05:02.972197"
+  "generated_at": "2026-06-12T14:07:55.071547"
 }

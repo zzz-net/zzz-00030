@@ -1,0 +1,3 @@
+﻿filename,path,case_number,target_dir,target_path,action,will_succeed,action_type,errors,warnings,in_processing_queue,in_error_queue,target_exists
+bad file#name.pdf,D:\workSpace\AI__SPACE\zzz-00030\samples\intake\bad file#name.pdf,,,,fail_precheck,False,move,文件名包含非法字符（仅允许字母、数字、横线、下划线、点）; 无法从文件名解析案卷号,文件已在错误队列中; 文件已在处理队列中,True,True,False
+unparseable_document.pdf,D:\workSpace\AI__SPACE\zzz-00030\samples\intake\unparseable_document.pdf,,,,fail_precheck,False,move,无法从文件名解析案卷号,文件已在错误队列中; 文件已在处理队列中,True,True,False

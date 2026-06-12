@@ -9,8 +9,11 @@ from scan_sorter.models import (
     ActionType,
     BatchRecord,
     BatchStatus,
+    DryRunPlanItem,
+    DryRunResult,
     ErrorItem,
     FileStatus,
+    PlanAction,
     PrecheckResult,
     ScanFile,
 )
@@ -48,6 +51,83 @@ class BatchManager:
             return []
         results = precheck_files(files, self.config)
         return results
+
+    def dry_run(self, max_files: int | None = None) -> DryRunResult:
+        files = scan_intake(self.config)
+        if not files:
+            return DryRunResult(items=[], total=0, will_succeed=0, will_fail=0, warnings=0)
+
+        results = precheck_files(files, self.config)
+
+        plan_items: list[DryRunPlanItem] = []
+        will_succeed = 0
+        will_fail = 0
+        warning_count = 0
+
+        batch_limit = max_files or self.config.batch.max_size
+        processed = 0
+
+        for sf, pr in zip(files, results):
+            if processed >= batch_limit:
+                break
+            processed += 1
+
+            item = DryRunPlanItem(
+                filename=sf.filename,
+                path=sf.path,
+                case_number=sf.case_number,
+                target_dir=sf.target_dir,
+                target_path=sf.target_path,
+                action_type=self.config.rules.action.lower(),
+            )
+
+            in_eq = self.error_queue.find_by_path(sf.path) is not None
+            in_pq = self.processing_queue.find_by_path(sf.path) is not None
+            target_exists = sf.target_path and os.path.exists(sf.target_path)
+
+            item.in_error_queue = in_eq
+            item.in_processing_queue = in_pq
+            item.target_exists = bool(target_exists)
+
+            if in_eq:
+                item.warnings.append("文件已在错误队列中")
+                warning_count += 1
+            if in_pq:
+                item.warnings.append("文件已在处理队列中")
+                warning_count += 1
+            if target_exists:
+                item.warnings.append("目标目录已有同名文件")
+                warning_count += 1
+
+            if not pr.ok:
+                item.will_succeed = False
+                item.errors = list(pr.errors)
+                will_fail += 1
+
+                has_target_conflict = any("目标路径已被占用" in e for e in pr.errors)
+                has_illegal = any("非法字符" in e or "文件名不合法" in e for e in pr.errors)
+                has_duplicate = any("重复文件名" in e for e in pr.errors)
+
+                if has_target_conflict:
+                    item.action = PlanAction.FAIL_TARGET_CONFLICT
+                elif has_duplicate:
+                    item.action = PlanAction.FAIL_DUPLICATE
+                else:
+                    item.action = PlanAction.FAIL_PRECHECK
+            else:
+                item.will_succeed = True
+                will_succeed += 1
+                item.action = PlanAction.ARCHIVE
+
+            plan_items.append(item)
+
+        return DryRunResult(
+            items=plan_items,
+            total=len(plan_items),
+            will_succeed=will_succeed,
+            will_fail=will_fail,
+            warnings=warning_count,
+        )
 
     def process(
         self, max_files: int | None = None

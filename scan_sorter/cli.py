@@ -37,6 +37,92 @@ sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding="utf-8", errors="repla
 sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding="utf-8", errors="replace")
 
 
+def export_plan_json(plan, output_path: str) -> None:
+    with open(output_path, "w", encoding="utf-8") as f:
+        json.dump(plan.to_dict(), f, ensure_ascii=False, indent=2)
+
+
+def export_plan_csv(plan, output_path: str) -> None:
+    fieldnames = [
+        "filename", "path", "case_number", "target_dir", "target_path",
+        "action", "will_succeed", "action_type",
+        "errors", "warnings",
+        "in_processing_queue", "in_error_queue", "target_exists",
+    ]
+    with open(output_path, "w", encoding="utf-8-sig", newline="") as f:
+        writer = csv.DictWriter(f, fieldnames=fieldnames)
+        writer.writeheader()
+        for item in plan.items:
+            row = item.to_dict()
+            row["errors"] = "; ".join(row.get("errors", []))
+            row["warnings"] = "; ".join(row.get("warnings", []))
+            writer.writerow(row)
+
+
+def cmd_plan(args: argparse.Namespace) -> None:
+    config = load_config(args.config)
+    mgr = BatchManager(config)
+    plan = mgr.dry_run(max_files=args.max_files)
+
+    print(f"\n{'='*60}")
+    print(f"预演计划 (dry-run)")
+    print(f"{'='*60}")
+    print(f"  总计文件: {plan.total}")
+    print(f"  预计成功: {plan.will_succeed}")
+    print(f"  预计失败: {plan.will_fail}")
+    print(f"  潜在告警: {plan.warnings}")
+    print(f"{'='*60}")
+
+    if not plan.items:
+        print("intake 目录无待处理文件")
+    else:
+        for item in plan.items:
+            status_icon = "✓" if item.will_succeed else "✗"
+            action_label = {
+                "archive": "归档",
+                "fail_precheck": "预检失败",
+                "fail_target_conflict": "目标冲突",
+                "fail_duplicate": "重复文件",
+                "skip_error_queue": "在错误队列",
+                "skip_queue": "在处理队列",
+            }.get(item.action.value, item.action.value)
+
+            line = f"  {status_icon} [{action_label}] {item.filename}"
+            if item.case_number:
+                line += f"  [案卷号: {item.case_number}]"
+            if item.target_path:
+                line += f"  -> {item.target_path}"
+            print(line)
+
+            tags = []
+            if item.in_processing_queue:
+                tags.append("在处理队列")
+            if item.in_error_queue:
+                tags.append("在错误队列")
+            if item.target_exists:
+                tags.append("目标已存在")
+            if tags:
+                print(f"      ℹ [{', '.join(tags)}]")
+
+            for warn in item.warnings:
+                print(f"      ⚠ {warn}")
+            for err in item.errors:
+                print(f"      ✗ {err}")
+
+    fmt = args.format
+    output_path = args.output
+    if fmt or output_path:
+        fmt = fmt or "json"
+        if not output_path:
+            output_path = f"process_plan.{fmt}"
+        if fmt == "json":
+            export_plan_json(plan, output_path)
+            print(f"\n  计划已导出 JSON: {output_path}")
+        elif fmt == "csv":
+            export_plan_csv(plan, output_path)
+            print(f"\n  计划已导出 CSV: {output_path}")
+
+
 def cmd_precheck(args: argparse.Namespace) -> None:
     config = load_config(args.config)
     mgr = BatchManager(config)
@@ -709,6 +795,16 @@ def build_parser() -> argparse.ArgumentParser:
     p_precheck = sub.add_parser("precheck", help="预检 intake 目录文件")
     p_precheck.add_argument("--json", help="预检结果输出 JSON 路径")
 
+    p_plan = sub.add_parser("plan", help="预演计划 (dry-run): 预览归档结果，不实际执行")
+    p_plan.add_argument("--max-files", type=int, help="最大预演文件数")
+    p_plan.add_argument(
+        "--format",
+        choices=["json", "csv"],
+        default=None,
+        help="导出格式 (不指定则不导出文件)",
+    )
+    p_plan.add_argument("--output", help="计划导出路径")
+
     p_process = sub.add_parser("process", help="预检并执行入库")
     p_process.add_argument("--max-files", type=int, help="最大处理文件数")
     p_process.add_argument("--json", help="处理结果输出 JSON 路径")
@@ -841,6 +937,7 @@ def main(argv: list[str] | None = None) -> int:
 
     dispatch = {
         "precheck": cmd_precheck,
+        "plan": cmd_plan,
         "process": cmd_process,
         "retry": cmd_retry,
         "rollback": cmd_rollback,

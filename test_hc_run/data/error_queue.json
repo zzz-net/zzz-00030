@@ -6,9 +6,9 @@
     "error": "文件名包含非法字符; 无法从文件名解析案卷号",
     "retry_count": 1,
     "max_retries": 3,
-    "added_at": "2026-06-12T13:49:05.596565",
-    "last_retry_at": "2026-06-12T13:49:05.603829",
-    "batch_id": "420a81bc"
+    "added_at": "2026-06-12T14:07:47.226761",
+    "last_retry_at": "2026-06-12T14:07:47.257033",
+    "batch_id": "2c5b8f30"
   },
   {
     "path": "D:\\workSpace\\AI__SPACE\\zzz-00030\\test_hc_run\\intake\\2024-B002-001.pdf",
@@ -17,7 +17,7 @@
     "error": "残留error_queue条目",
     "retry_count": 0,
     "max_retries": 3,
-    "added_at": "2026-06-12T13:49:05.613264",
+    "added_at": "2026-06-12T14:07:47.296903",
     "last_retry_at": null,
     "batch_id": null
   },
@@ -28,7 +28,7 @@
     "error": "heal修正:队列done但源文件和目标都不存在",
     "retry_count": 0,
     "max_retries": 3,
-    "added_at": "2026-06-12T13:49:05.683072",
+    "added_at": "2026-06-12T14:07:47.520732",
     "last_retry_at": null,
     "batch_id": null
   },
@@ -39,7 +39,7 @@
     "error": "heal修正:processing_queue为failed但error_queue缺失",
     "retry_count": 0,
     "max_retries": 3,
-    "added_at": "2026-06-12T13:49:05.723832",
+    "added_at": "2026-06-12T14:07:47.673579",
     "last_retry_at": null,
     "batch_id": null
   },
@@ -50,7 +50,7 @@
     "error": "Phase13 CSV导出测试幽灵",
     "retry_count": 0,
     "max_retries": 3,
-    "added_at": "2026-06-12T13:49:05.771329",
+    "added_at": "2026-06-12T14:07:47.932567",
     "last_retry_at": null,
     "batch_id": null
   },
@@ -61,7 +61,7 @@
     "error": "多问题测试文件",
     "retry_count": 0,
     "max_retries": 3,
-    "added_at": "2026-06-12T13:49:05.808397",
+    "added_at": "2026-06-12T14:07:48.124350",
     "last_retry_at": null,
     "batch_id": null
   }

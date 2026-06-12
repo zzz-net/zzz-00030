@@ -1,5 +1,5 @@
-intake_dir: ./review_tmp/intake
-target_base: ./review_tmp/target
+intake_dir: D:/workSpace/AI__SPACE/zzz-00030/review_tmp/intake
+target_base: D:/workSpace/AI__SPACE/zzz-00030/review_tmp/target
 operator: reviewer
 
 rules:
@@ -23,7 +23,7 @@ batch:
   stop_on_failure_ratio: 0.5
 
 logging:
-  dir: ./review_tmp/state
+  dir: D:/workSpace/AI__SPACE/zzz-00030/review_tmp/state
   action_log: action_log.jsonl
   queue_file: queue.json
   error_queue_file: error_queue.json

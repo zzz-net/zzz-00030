@@ -101,7 +101,7 @@
       "fix_description": "将队列状态修正为failed"
     }
   ],
-  "last_check_time": "2026-06-12T13:49:05.756237",
+  "last_check_time": "2026-06-12T14:07:47.856845",
   "summary": {
     "new_count": 2,
     "resolved_count": 2,

@@ -1,15 +1,15 @@
 [
   {
-    "batch_id": "974487eb",
-    "created_at": "2026-06-12T13:05:02.331579",
+    "batch_id": "52cb0ecc",
+    "created_at": "2026-06-12T14:07:54.422696",
     "operator": "report_test_op",
     "status": "partial_failed",
     "total": 5,
     "succeeded": 2,
     "failed": 3,
     "action_ids": [
-      "fe4f6d4130c6",
-      "973f1a003f3d"
+      "937f98800ef5",
+      "c467e8eb568a"
     ],
     "error_file_paths": [
       "D:\\workSpace\\AI__SPACE\\zzz-00030\\test_report_run\\intake\\2024-A001-002.pdf",
@@ -23,15 +23,15 @@
     }
   },
   {
-    "batch_id": "f31ffeb8",
-    "created_at": "2026-06-12T13:05:02.749660",
+    "batch_id": "5fc10718",
+    "created_at": "2026-06-12T14:07:54.799515",
     "operator": "report_test_op",
     "status": "partial_failed",
     "total": 2,
     "succeeded": 1,
     "failed": 1,
     "action_ids": [
-      "ab27fe5323b5"
+      "c9b2cc24ccca"
     ],
     "error_file_paths": [
       "D:\\workSpace\\AI__SPACE\\zzz-00030\\test_report_run\\intake\\bad file#name.pdf"

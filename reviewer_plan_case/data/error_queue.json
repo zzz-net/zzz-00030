@@ -1,0 +1,24 @@
+[
+  {
+    "path": "D:\\workSpace\\AI__SPACE\\zzz-00030\\reviewer_plan_case\\intake\\2026-R300-001.pdf",
+    "filename": "2026-R300-001.pdf",
+    "case_number": "2026-R300",
+    "error": "目标路径已被占用: D:\\workSpace\\AI__SPACE\\zzz-00030\\reviewer_plan_case\\target\\2026-R300\\2026-R300-001.pdf",
+    "retry_count": 0,
+    "max_retries": 3,
+    "added_at": "2026-06-12T14:14:23.486887",
+    "last_retry_at": null,
+    "batch_id": "c7fa4c86"
+  },
+  {
+    "path": "D:\\workSpace\\AI__SPACE\\zzz-00030\\reviewer_plan_case\\intake\\bad file#name.pdf",
+    "filename": "bad file#name.pdf",
+    "case_number": null,
+    "error": "文件名包含非法字符; 无法从文件名解析案卷号",
+    "retry_count": 0,
+    "max_retries": 3,
+    "added_at": "2026-06-12T14:14:23.486887",
+    "last_retry_at": null,
+    "batch_id": "c7fa4c86"
+  }
+]
