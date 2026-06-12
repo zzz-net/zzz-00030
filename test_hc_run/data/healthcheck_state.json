@@ -1,10 +1,113 @@
 {
-  "last_check_time": "2026-06-12T12:29:03.851345",
-  "last_findings": [],
-  "finding_fingerprints": [],
+  "last_findings": [
+    {
+      "fingerprint": "77b9ce17300c24ef",
+      "category": "queue_file_mismatch",
+      "severity": "critical",
+      "description": "队列标记done但源文件和目标文件都不存在: 2024-S013-001.pdf",
+      "file_path": "D:\\workSpace\\AI__SPACE\\zzz-00030\\test_hc_run\\intake\\2024-S013-001.pdf",
+      "queue_path": "D:\\workSpace\\AI__SPACE\\zzz-00030\\test_hc_run\\data\\queue.json",
+      "batch_id": null,
+      "action_id": null,
+      "detail": {
+        "queue_status": "done",
+        "actual_location": "nowhere",
+        "target_path": "D:\\workSpace\\AI__SPACE\\zzz-00030\\test_hc_run\\target\\2024-S013\\2024-S013-001.pdf"
+      },
+      "fixable": true,
+      "fix_description": "将队列状态修正为failed"
+    },
+    {
+      "fingerprint": "6dc28a2c5f530f26",
+      "category": "error_queue_stale",
+      "severity": "warning",
+      "description": "error_queue 中文件已不存在: 2024-C017-001.pdf",
+      "file_path": "D:\\workSpace\\AI__SPACE\\zzz-00030\\test_hc_run\\intake\\2024-C017-001.pdf",
+      "queue_path": null,
+      "batch_id": null,
+      "action_id": null,
+      "detail": {
+        "path": "D:\\workSpace\\AI__SPACE\\zzz-00030\\test_hc_run\\intake\\2024-C017-001.pdf",
+        "error": "Phase13 CSV导出测试幽灵"
+      },
+      "fixable": true,
+      "fix_description": "从error_queue中移除此条目"
+    },
+    {
+      "fingerprint": "3ef14bb33d64ae12",
+      "category": "error_queue_stale",
+      "severity": "warning",
+      "description": "error_queue 中文件已不存在: 2024-M014-001.pdf",
+      "file_path": "D:\\workSpace\\AI__SPACE\\zzz-00030\\test_hc_run\\intake\\2024-M014-001.pdf",
+      "queue_path": null,
+      "batch_id": null,
+      "action_id": null,
+      "detail": {
+        "path": "D:\\workSpace\\AI__SPACE\\zzz-00030\\test_hc_run\\intake\\2024-M014-001.pdf",
+        "error": "多问题测试文件"
+      },
+      "fixable": true,
+      "fix_description": "从error_queue中移除此条目"
+    },
+    {
+      "fingerprint": "0f22d42721caedb6",
+      "category": "queue_stale_done",
+      "severity": "critical",
+      "description": "队列标记done但目标文件已被外部删除: 2024-S013-001.pdf",
+      "file_path": "D:\\workSpace\\AI__SPACE\\zzz-00030\\test_hc_run\\intake\\2024-S013-001.pdf",
+      "queue_path": null,
+      "batch_id": null,
+      "action_id": null,
+      "detail": {
+        "target_path": "D:\\workSpace\\AI__SPACE\\zzz-00030\\test_hc_run\\target\\2024-S013\\2024-S013-001.pdf"
+      },
+      "fixable": true,
+      "fix_description": "将队列状态修正为failed"
+    },
+    {
+      "fingerprint": "66240d03a7454031",
+      "category": "error_queue_inconsistency",
+      "severity": "warning",
+      "description": "error_queue 文件不在 processing_queue 中: 2024-C017-001.pdf",
+      "file_path": "D:\\workSpace\\AI__SPACE\\zzz-00030\\test_hc_run\\intake\\2024-C017-001.pdf",
+      "queue_path": null,
+      "batch_id": null,
+      "action_id": null,
+      "detail": {
+        "path": "D:\\workSpace\\AI__SPACE\\zzz-00030\\test_hc_run\\intake\\2024-C017-001.pdf",
+        "queue_status": "missing"
+      },
+      "fixable": false,
+      "fix_description": "processing_queue无此记录,需人工确认"
+    },
+    {
+      "fingerprint": "6f2554eb63144057",
+      "category": "error_queue_inconsistency",
+      "severity": "critical",
+      "description": "error_queue 文件在 processing_queue 状态为 done: 2024-M014-001.pdf",
+      "file_path": "D:\\workSpace\\AI__SPACE\\zzz-00030\\test_hc_run\\intake\\2024-M014-001.pdf",
+      "queue_path": null,
+      "batch_id": null,
+      "action_id": null,
+      "detail": {
+        "path": "D:\\workSpace\\AI__SPACE\\zzz-00030\\test_hc_run\\intake\\2024-M014-001.pdf",
+        "queue_status": "done"
+      },
+      "fixable": true,
+      "fix_description": "从error_queue中移除此条目"
+    }
+  ],
+  "finding_fingerprints": [
+    "77b9ce17300c24ef",
+    "6dc28a2c5f530f26",
+    "3ef14bb33d64ae12",
+    "0f22d42721caedb6",
+    "66240d03a7454031",
+    "6f2554eb63144057"
+  ],
   "heal_logs": [
     {
-      "timestamp": "2026-06-12T12:29:03.642486",
+      "timestamp": "2026-06-12T13:49:05.672109",
       "dry_run": true,
       "actions": [
         {
@@ -52,7 +155,7 @@
       ]
     },
     {
-      "timestamp": "2026-06-12T12:29:03.693191",
+      "timestamp": "2026-06-12T13:49:05.684046",
       "dry_run": false,
       "actions": [
         {
@@ -100,7 +203,7 @@
       ]
     },
     {
-      "timestamp": "2026-06-12T12:29:03.843230",
+      "timestamp": "2026-06-12T13:49:05.724082",
       "dry_run": false,
       "actions": [
         {
@@ -112,5 +215,6 @@
         }
       ]
     }
-  ]
+  ],
+  "last_check_time": "2026-06-12T13:49:05.813363"
 }

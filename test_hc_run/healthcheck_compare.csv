@@ -1,0 +1,7 @@
+﻿status,fingerprint,category,severity,description,file_path,queue_path,batch_id,action_id,fixable,fix_description
+new,6dc28a2c5f530f26,error_queue_stale,warning,error_queue 中文件已不存在: 2024-C017-001.pdf,D:\workSpace\AI__SPACE\zzz-00030\test_hc_run\intake\2024-C017-001.pdf,,,,True,从error_queue中移除此条目
+new,66240d03a7454031,error_queue_inconsistency,warning,error_queue 文件不在 processing_queue 中: 2024-C017-001.pdf,D:\workSpace\AI__SPACE\zzz-00030\test_hc_run\intake\2024-C017-001.pdf,,,,False,"processing_queue无此记录,需人工确认"
+resolved,e3826957c0cf8334,error_queue_stale,warning,error_queue 中文件已不存在: 2024-A016-001.pdf,D:\workSpace\AI__SPACE\zzz-00030\test_hc_run\intake\2024-A016-001.pdf,,,,True,从error_queue中移除此条目
+resolved,296cbaa642e584fb,error_queue_inconsistency,warning,error_queue 文件不在 processing_queue 中: 2024-A016-001.pdf,D:\workSpace\AI__SPACE\zzz-00030\test_hc_run\intake\2024-A016-001.pdf,,,,False,"processing_queue无此记录,需人工确认"
+persistent,77b9ce17300c24ef,queue_file_mismatch,critical,队列标记done但源文件和目标文件都不存在: 2024-S013-001.pdf,D:\workSpace\AI__SPACE\zzz-00030\test_hc_run\intake\2024-S013-001.pdf,D:\workSpace\AI__SPACE\zzz-00030\test_hc_run\data\queue.json,,,True,将队列状态修正为failed
+persistent,0f22d42721caedb6,queue_stale_done,critical,队列标记done但目标文件已被外部删除: 2024-S013-001.pdf,D:\workSpace\AI__SPACE\zzz-00030\test_hc_run\intake\2024-S013-001.pdf,,,,True,将队列状态修正为failed

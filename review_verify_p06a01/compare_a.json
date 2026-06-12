@@ -1,0 +1,44 @@
+{
+  "new_findings": [],
+  "resolved_findings": [
+    {
+      "fingerprint": "004c114ff8e661b0",
+      "category": "error_queue_stale",
+      "severity": "warning",
+      "description": "error_queue 中文件已不存在: 2024-L001-001.pdf",
+      "file_path": "D:\\workSpace\\AI__SPACE\\zzz-00030\\review_verify_p06a01\\shared_intake\\2024-L001-001.pdf",
+      "queue_path": null,
+      "batch_id": null,
+      "action_id": null,
+      "detail": {
+        "path": "D:\\workSpace\\AI__SPACE\\zzz-00030\\review_verify_p06a01\\shared_intake\\2024-L001-001.pdf",
+        "error": "ghost-a"
+      },
+      "fixable": true,
+      "fix_description": "从error_queue中移除此条目"
+    },
+    {
+      "fingerprint": "a0f6a5583f2805a8",
+      "category": "error_queue_inconsistency",
+      "severity": "warning",
+      "description": "error_queue 文件不在 processing_queue 中: 2024-L001-001.pdf",
+      "file_path": "D:\\workSpace\\AI__SPACE\\zzz-00030\\review_verify_p06a01\\shared_intake\\2024-L001-001.pdf",
+      "queue_path": null,
+      "batch_id": null,
+      "action_id": null,
+      "detail": {
+        "path": "D:\\workSpace\\AI__SPACE\\zzz-00030\\review_verify_p06a01\\shared_intake\\2024-L001-001.pdf",
+        "queue_status": "missing"
+      },
+      "fixable": false,
+      "fix_description": "processing_queue无此记录,需人工确认"
+    }
+  ],
+  "persistent_findings": [],
+  "last_check_time": "2026-06-12T13:51:16.141184",
+  "summary": {
+    "new_count": 0,
+    "resolved_count": 2,
+    "persistent_count": 0
+  }
+}

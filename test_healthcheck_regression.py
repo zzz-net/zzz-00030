@@ -153,6 +153,14 @@ def assert_gt(actual, threshold, label: str) -> None:
     print(f"  [OK] {label}: {actual!r} > {threshold!r}")
 
 
+def assert_not_in(member, container, label: str) -> None:
+    if member in container:
+        raise AssertionError(
+            f"[FAIL] {label}: {member!r} unexpectedly in container"
+        )
+    print(f"  [OK] {label}: {member!r} absent")
+
+
 def step(title: str) -> None:
     print(f"\n{'='*60}")
     print(f"  {title}")
@@ -630,6 +638,280 @@ def main() -> int:
         "heal_log.jsonl 条数应等于 CLI heal 调用次数 (2+1=3)"
     )
     print(f"  heal_log.jsonl 最终: {len(heal_log_records_final)} 条")
+
+    # ============================================================
+    # Phase 13: --compare-last 对比功能测试
+    # ============================================================
+    step("Phase 13 前置: 重置 healthcheck state 模拟首次运行环境")
+
+    state_13 = load_json(HEALTHCHECK_STATE_FILE)
+    prev_findings_backup = state_13.get("last_findings", [])
+    prev_fps_backup = state_13.get("finding_fingerprints", [])
+    state_13.pop("last_check_time", None)
+    state_13["last_findings"] = []
+    state_13["finding_fingerprints"] = []
+    save_json(HEALTHCHECK_STATE_FILE, state_13)
+    print("  已重置 state: 清除 last_check_time，清空 last_findings")
+
+    step("Phase 13a: --compare-last 首次运行 — 无可对比的上次结果")
+
+    import io
+    from contextlib import redirect_stdout
+
+    HC_COMPARE_JSON = os.path.join(TEST_ROOT, "healthcheck_compare.json")
+    HC_COMPARE_CSV = os.path.join(TEST_ROOT, "healthcheck_compare.csv")
+
+    f = io.StringIO()
+    with redirect_stdout(f):
+        cli_main(["-c", CONFIG_PATH, "healthcheck", "--compare-last"])
+    output_13a = f.getvalue()
+    assert_in("无可对比的上次体检结果（首次运行）", output_13a, "首次运行应提示无可对比结果")
+    print("  首次运行 --compare-last: 提示无可对比结果")
+
+    step("Phase 13b: 制造新问题 — 添加幽灵 error_queue 和 stale done")
+
+    ghost_13 = os.path.join(INTAKE_DIR, "2024-H013-001.pdf")
+    stale_13 = os.path.join(INTAKE_DIR, "2024-S013-001.pdf")
+
+    mgr_13b = BatchManager(config)
+    mgr_13b.error_queue.add(ErrorItem(
+        path=ghost_13,
+        filename="2024-H013-001.pdf",
+        case_number="2024-H013",
+        error="Phase13 幽灵条目",
+        retry_count=0,
+    ))
+
+    mgr_13b.processing_queue.enqueue(
+        stale_13, "2024-S013", filename="2024-S013-001.pdf"
+    )
+    mgr_13b.processing_queue.mark_done(stale_13)
+    s013_target_dir = os.path.join(TARGET_DIR, "2024-S013")
+    os.makedirs(s013_target_dir, exist_ok=True)
+    s013_target = os.path.join(s013_target_dir, "2024-S013-001.pdf")
+    mgr_13b.action_logger.log(ActionRecord(
+        source=stale_13,
+        destination=s013_target,
+        action_type=ActionType.MOVE,
+        operator="hc_test_op",
+        case_number="2024-S013",
+    ))
+
+    state_data = load_json(HEALTHCHECK_STATE_FILE)
+    prev_fps = set(state_data.get("finding_fingerprints", []))
+    print(f"  添加新问题前上次体检指纹数: {len(prev_fps)}")
+
+    step("Phase 13c: 第二次运行 --compare-last — 验证新增问题识别")
+
+    f = io.StringIO()
+    with redirect_stdout(f):
+        cli_main(["-c", CONFIG_PATH, "healthcheck", "--compare-last"])
+    output_13c = f.getvalue()
+
+    assert_in("与上次体检对比", output_13c, "应显示对比标题")
+    assert_in("新增:", output_13c, "应显示新增数量")
+    assert_in("持续存在:", output_13c, "应显示持续存在数量")
+    assert_in("新增问题", output_13c, "应显示新增问题列表")
+    assert_not_in("持续存在问题", output_13c, "首次对比时应无持续存在问题列表")
+    assert_not_in("已解决问题", output_13c, "首次对比时应无已解决问题列表")
+    print("  第二次运行 --compare-last: 输出包含新增分组（无持续/已解决，因上次为0）")
+
+    step("Phase 13d: 修复部分问题 + 添加新问题 — 制造三组结果场景")
+
+    mgr_13d = BatchManager(config)
+    mgr_13d.error_queue.remove(ghost_13)
+    print(f"  手动修复: 移除幽灵条目 {ghost_13}")
+
+    new_ghost_13 = os.path.join(INTAKE_DIR, "2024-N015-001.pdf")
+    mgr_13d.error_queue.add(ErrorItem(
+        path=new_ghost_13,
+        filename="2024-N015-001.pdf",
+        case_number="2024-N015",
+        error="Phase13 新增幽灵条目",
+        retry_count=0,
+    ))
+    print(f"  手动添加新问题: {new_ghost_13}")
+
+    step("Phase 13e: 第三次运行 --compare-last — 验证三组结果（新增/已解决/持续存在）")
+
+    f = io.StringIO()
+    with redirect_stdout(f):
+        cli_main(["-c", CONFIG_PATH, "healthcheck", "--compare-last"])
+    output_13e = f.getvalue()
+
+    assert_in("已解决:", output_13e, "应显示已解决数量")
+    assert_in("已解决问题", output_13e, "应显示已解决问题列表")
+    assert_in("新增问题", output_13e, "应有新增问题")
+    assert_in("持续存在问题", output_13e, "应有持续存在问题")
+    print("  第三次运行 --compare-last: 输出包含新增、已解决、持续存在三组")
+
+    step("Phase 13f: 对比结果导出 JSON（制造一次新变化）")
+
+    another_ghost = os.path.join(INTAKE_DIR, "2024-A016-001.pdf")
+    mgr_13f = BatchManager(config)
+    mgr_13f.error_queue.add(ErrorItem(
+        path=another_ghost,
+        filename="2024-A016-001.pdf",
+        case_number="2024-A016",
+        error="Phase13 JSON导出测试幽灵",
+        retry_count=0,
+    ))
+    mgr_13f.error_queue.remove(new_ghost_13)
+    print(f"  制造变化: 移除 {os.path.basename(new_ghost_13)}, 添加 {os.path.basename(another_ghost)}")
+
+    cli_main([
+        "-c", CONFIG_PATH, "healthcheck",
+        "--compare-last",
+        "--format", "json",
+        "--output", HC_COMPARE_JSON,
+    ])
+    assert_eq(os.path.exists(HC_COMPARE_JSON), True, "对比 JSON 文件存在")
+
+    compare_json = load_json(HC_COMPARE_JSON)
+    assert_in("new_findings", compare_json, "JSON 含 new_findings")
+    assert_in("resolved_findings", compare_json, "JSON 含 resolved_findings")
+    assert_in("persistent_findings", compare_json, "JSON 含 persistent_findings")
+    assert_in("summary", compare_json, "JSON 含 summary")
+    assert_in("last_check_time", compare_json, "JSON 含 last_check_time")
+
+    summary = compare_json["summary"]
+    assert_in("new_count", summary, "summary 含 new_count")
+    assert_in("resolved_count", summary, "summary 含 resolved_count")
+    assert_in("persistent_count", summary, "summary 含 persistent_count")
+
+    new_count = summary["new_count"]
+    resolved_count = summary["resolved_count"]
+    persistent_count = summary["persistent_count"]
+    print(f"  对比 JSON: 新增={new_count}, 已解决={resolved_count}, 持续={persistent_count}")
+
+    assert_gt(len(compare_json["new_findings"]), 0, "应至少有1个新增问题")
+    assert_gt(len(compare_json["resolved_findings"]), 0, "应至少有1个已解决问题")
+    assert_gt(len(compare_json["persistent_findings"]), 0, "应至少有1个持续存在问题")
+
+    for finding in compare_json["new_findings"]:
+        assert_in("fingerprint", finding, "新增 finding 含 fingerprint")
+        assert_in("category", finding, "新增 finding 含 category")
+        assert_in("severity", finding, "新增 finding 含 severity")
+
+    step("Phase 13g: 对比结果导出 CSV（再制造一次变化）")
+
+    csv_ghost = os.path.join(INTAKE_DIR, "2024-C017-001.pdf")
+    mgr_13g = BatchManager(config)
+    mgr_13g.error_queue.add(ErrorItem(
+        path=csv_ghost,
+        filename="2024-C017-001.pdf",
+        case_number="2024-C017",
+        error="Phase13 CSV导出测试幽灵",
+        retry_count=0,
+    ))
+    mgr_13g.error_queue.remove(another_ghost)
+    print(f"  制造变化: 移除 {os.path.basename(another_ghost)}, 添加 {os.path.basename(csv_ghost)}")
+
+    cli_main([
+        "-c", CONFIG_PATH, "healthcheck",
+        "--compare-last",
+        "--format", "csv",
+        "--output", HC_COMPARE_CSV,
+    ])
+    assert_eq(os.path.exists(HC_COMPARE_CSV), True, "对比 CSV 文件存在")
+
+    with open(HC_COMPARE_CSV, "r", encoding="utf-8-sig", newline="") as f:
+        reader = csv.DictReader(f)
+        rows = list(reader)
+    assert_gt(len(rows), 0, "CSV 至少有1行")
+    assert_in("status", rows[0], "CSV 含 status 列")
+    assert_in("fingerprint", rows[0], "CSV 含 fingerprint 列")
+    assert_in("category", rows[0], "CSV 含 category 列")
+
+    statuses = {row["status"] for row in rows}
+    assert_in("new", statuses, "CSV 中有 new 状态")
+    assert_in("resolved", statuses, "CSV 中有 resolved 状态")
+    assert_in("persistent", statuses, "CSV 中有 persistent 状态")
+    print(f"  对比 CSV: {len(rows)} 行, 状态种类={statuses}")
+
+    step("Phase 13h: 普通 healthcheck 输出无退化（不带 --compare-last）")
+
+    f = io.StringIO()
+    with redirect_stdout(f):
+        cli_main(["-c", CONFIG_PATH, "healthcheck"])
+    output_13h = f.getvalue()
+
+    assert_in("状态体检结果", output_13h, "普通模式应显示体检结果")
+    assert_in("总计:", output_13h, "普通模式应显示总计")
+    assert_not_in("与上次体检对比", output_13h, "普通模式不应显示对比标题")
+    assert_not_in("新增问题", output_13h, "普通模式不应显示新增问题列表")
+    assert_not_in("已解决问题", output_13h, "普通模式不应显示已解决问题列表")
+    assert_not_in("持续存在问题", output_13h, "普通模式不应显示持续存在问题列表")
+    print("  普通 healthcheck 输出: 无退化，不包含对比分组")
+
+    cli_main(["-c", CONFIG_PATH, "healthcheck", "--format", "json", "--output", HC_JSON])
+    normal_json = load_json(HC_JSON)
+    assert_eq(isinstance(normal_json, list), True, "普通 JSON 导出应为列表")
+    assert_gt(len(normal_json), 0, "普通 JSON 导出应有数据")
+    print(f"  普通 JSON 导出格式验证通过: {len(normal_json)} 条")
+
+    step("Phase 13i: 配置重新加载后对比继续有效")
+
+    config_reload_13 = load_config(CONFIG_PATH)
+    checker_reload_13 = HealthChecker(config_reload_13)
+    findings_reload_13 = checker_reload_13.check()
+
+    from scan_sorter.healthcheck import compare_findings
+    prev_13 = checker_reload_13.state.get_last_findings()
+    comparison_reload = compare_findings(
+        findings_reload_13, prev_13,
+        checker_reload_13.state.get_last_check_time()
+    )
+    assert_eq(
+        len(comparison_reload.persistent_findings),
+        len(findings_reload_13),
+        "配置重载后所有问题应都属于持续存在"
+    )
+    assert_eq(len(comparison_reload.new_findings), 0, "配置重载后不应有新增")
+    assert_eq(len(comparison_reload.resolved_findings), 0, "配置重载后不应有已解决")
+    print("  配置重新加载后对比: 全部持续存在，指纹稳定")
+
+    step("Phase 13j: 同一文件多个问题独立归类（指纹稳定）")
+
+    multi_file = os.path.join(INTAKE_DIR, "2024-M014-001.pdf")
+    mgr_13j = BatchManager(config)
+    mgr_13j.processing_queue.enqueue(
+        multi_file, "2024-M014", filename="2024-M014-001.pdf"
+    )
+    mgr_13j.processing_queue.mark_done(multi_file)
+    mgr_13j.error_queue.add(ErrorItem(
+        path=multi_file,
+        filename="2024-M014-001.pdf",
+        case_number="2024-M014",
+        error="多问题测试文件",
+        retry_count=0,
+    ))
+
+    checker_13j = HealthChecker(config)
+    findings_13j = checker_13j.check()
+    multi_file_findings = [
+        f for f in findings_13j if f.file_path == multi_file
+    ]
+    multi_fps = {f.fingerprint for f in multi_file_findings}
+    print(f"  同一文件 {os.path.basename(multi_file)} 关联 {len(multi_file_findings)} 个问题, {len(multi_fps)} 个不同指纹")
+    assert_gt(
+        len(multi_fps), 1,
+        "同一文件的不同类问题应有不同指纹"
+    )
+
+    comparison_13j = compare_findings(
+        findings_13j, findings_reload_13,
+        checker_reload_13.state.get_last_check_time()
+    )
+    new_multi = [
+        f for f in comparison_13j.new_findings
+        if f.file_path == multi_file
+    ]
+    assert_eq(
+        len(new_multi), len(multi_file_findings),
+        "同一文件的多个新问题应都被识别为新增"
+    )
+    print("  同一文件多个问题: 全部正确归类为新增")
 
     step("所有断言通过 ✓")
     print(f"\n证据目录保留: {TEST_ROOT}")

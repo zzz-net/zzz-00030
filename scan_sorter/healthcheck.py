@@ -814,3 +814,78 @@ def export_findings_csv(findings: list[Finding], path: str) -> None:
             row["severity"] = row["severity"]
             row["fixable"] = str(row["fixable"])
             writer.writerow(row)
+
+
+@dataclass
+class ComparisonResult:
+    new_findings: list[Finding] = field(default_factory=list)
+    resolved_findings: list[Finding] = field(default_factory=list)
+    persistent_findings: list[Finding] = field(default_factory=list)
+    last_check_time: Optional[str] = None
+
+    def to_dict(self) -> dict:
+        return {
+            "new_findings": [f.to_dict() for f in self.new_findings],
+            "resolved_findings": [f.to_dict() for f in self.resolved_findings],
+            "persistent_findings": [f.to_dict() for f in self.persistent_findings],
+            "last_check_time": self.last_check_time,
+            "summary": {
+                "new_count": len(self.new_findings),
+                "resolved_count": len(self.resolved_findings),
+                "persistent_count": len(self.persistent_findings),
+            },
+        }
+
+
+def compare_findings(
+    current: list[Finding],
+    previous: list[Finding],
+    last_check_time: Optional[str] = None,
+) -> ComparisonResult:
+    prev_by_fp = {f.fingerprint: f for f in previous}
+    curr_by_fp = {f.fingerprint: f for f in current}
+
+    new_findings = [
+        f for f in current if f.fingerprint not in prev_by_fp
+    ]
+    resolved_findings = [
+        f for f in previous if f.fingerprint not in curr_by_fp
+    ]
+    persistent_findings = [
+        f for f in current if f.fingerprint in prev_by_fp
+    ]
+
+    return ComparisonResult(
+        new_findings=new_findings,
+        resolved_findings=resolved_findings,
+        persistent_findings=persistent_findings,
+        last_check_time=last_check_time,
+    )
+
+
+def export_comparison_json(result: ComparisonResult, path: str) -> None:
+    save_json(path, result.to_dict())
+
+
+def export_comparison_csv(result: ComparisonResult, path: str) -> None:
+    import csv
+    fieldnames = [
+        "status", "fingerprint", "category", "severity", "description",
+        "file_path", "queue_path", "batch_id", "action_id",
+        "fixable", "fix_description",
+    ]
+    with open(path, "w", encoding="utf-8-sig", newline="") as f:
+        writer = csv.DictWriter(f, fieldnames=fieldnames, extrasaction="ignore")
+        writer.writeheader()
+        for status, findings in [
+            ("new", result.new_findings),
+            ("resolved", result.resolved_findings),
+            ("persistent", result.persistent_findings),
+        ]:
+            for finding in findings:
+                row = finding.to_dict()
+                row["status"] = status
+                row["category"] = row["category"]
+                row["severity"] = row["severity"]
+                row["fixable"] = str(row["fixable"])
+                writer.writerow(row)

@@ -1,98 +1,66 @@
 [
   {
-    "fingerprint": "e0c4052f65729312",
+    "fingerprint": "77b9ce17300c24ef",
     "category": "queue_file_mismatch",
     "severity": "critical",
-    "description": "队列标记done但文件仍在intake: 2024-B002-001.pdf",
-    "file_path": "D:\\workSpace\\AI__SPACE\\zzz-00030\\test_hc_run\\intake\\2024-B002-001.pdf",
-    "queue_path": "D:\\workSpace\\AI__SPACE\\zzz-00030\\test_hc_run\\data\\queue.json",
-    "batch_id": null,
-    "action_id": null,
-    "detail": {
-      "queue_status": "done",
-      "actual_location": "intake"
-    },
-    "fixable": true,
-    "fix_description": "将队列状态修正为failed"
-  },
-  {
-    "fingerprint": "39bd50d8ac0441fc",
-    "category": "queue_file_mismatch",
-    "severity": "critical",
-    "description": "队列标记done但源文件和目标文件都不存在: 2024-C003-001.pdf",
-    "file_path": "D:\\workSpace\\AI__SPACE\\zzz-00030\\test_hc_run\\intake\\2024-C003-001.pdf",
+    "description": "队列标记done但源文件和目标文件都不存在: 2024-S013-001.pdf",
+    "file_path": "D:\\workSpace\\AI__SPACE\\zzz-00030\\test_hc_run\\intake\\2024-S013-001.pdf",
     "queue_path": "D:\\workSpace\\AI__SPACE\\zzz-00030\\test_hc_run\\data\\queue.json",
     "batch_id": null,
     "action_id": null,
     "detail": {
       "queue_status": "done",
       "actual_location": "nowhere",
-      "target_path": "D:\\workSpace\\AI__SPACE\\zzz-00030\\test_hc_run\\target\\2024-C003\\2024-C003-001.pdf"
+      "target_path": "D:\\workSpace\\AI__SPACE\\zzz-00030\\test_hc_run\\target\\2024-S013\\2024-S013-001.pdf"
     },
     "fixable": true,
     "fix_description": "将队列状态修正为failed"
   },
   {
-    "fingerprint": "11d7a08a7b020e8a",
+    "fingerprint": "6dc28a2c5f530f26",
     "category": "error_queue_stale",
     "severity": "warning",
-    "description": "error_queue 中文件已不存在: 2024-G999-001.pdf",
-    "file_path": "D:\\workSpace\\AI__SPACE\\zzz-00030\\test_hc_run\\intake\\2024-G999-001.pdf",
+    "description": "error_queue 中文件已不存在: 2024-C017-001.pdf",
+    "file_path": "D:\\workSpace\\AI__SPACE\\zzz-00030\\test_hc_run\\intake\\2024-C017-001.pdf",
     "queue_path": null,
     "batch_id": null,
     "action_id": null,
     "detail": {
-      "path": "D:\\workSpace\\AI__SPACE\\zzz-00030\\test_hc_run\\intake\\2024-G999-001.pdf",
-      "error": "幽灵条目"
+      "path": "D:\\workSpace\\AI__SPACE\\zzz-00030\\test_hc_run\\intake\\2024-C017-001.pdf",
+      "error": "Phase13 CSV导出测试幽灵"
     },
     "fixable": true,
     "fix_description": "从error_queue中移除此条目"
   },
   {
-    "fingerprint": "a6b6bf7eaf601f01",
+    "fingerprint": "0f22d42721caedb6",
     "category": "queue_stale_done",
     "severity": "critical",
-    "description": "队列标记done但目标文件已被外部删除: 2024-C003-001.pdf",
-    "file_path": "D:\\workSpace\\AI__SPACE\\zzz-00030\\test_hc_run\\intake\\2024-C003-001.pdf",
+    "description": "队列标记done但目标文件已被外部删除: 2024-S013-001.pdf",
+    "file_path": "D:\\workSpace\\AI__SPACE\\zzz-00030\\test_hc_run\\intake\\2024-S013-001.pdf",
     "queue_path": null,
     "batch_id": null,
     "action_id": null,
     "detail": {
-      "target_path": "D:\\workSpace\\AI__SPACE\\zzz-00030\\test_hc_run\\target\\2024-C003\\2024-C003-001.pdf"
+      "target_path": "D:\\workSpace\\AI__SPACE\\zzz-00030\\test_hc_run\\target\\2024-S013\\2024-S013-001.pdf"
     },
     "fixable": true,
     "fix_description": "将队列状态修正为failed"
   },
   {
-    "fingerprint": "d72ac198accf4a37",
+    "fingerprint": "66240d03a7454031",
     "category": "error_queue_inconsistency",
     "severity": "warning",
-    "description": "error_queue 文件不在 processing_queue 中: 2024-G999-001.pdf",
-    "file_path": "D:\\workSpace\\AI__SPACE\\zzz-00030\\test_hc_run\\intake\\2024-G999-001.pdf",
+    "description": "error_queue 文件不在 processing_queue 中: 2024-C017-001.pdf",
+    "file_path": "D:\\workSpace\\AI__SPACE\\zzz-00030\\test_hc_run\\intake\\2024-C017-001.pdf",
     "queue_path": null,
     "batch_id": null,
     "action_id": null,
     "detail": {
-      "path": "D:\\workSpace\\AI__SPACE\\zzz-00030\\test_hc_run\\intake\\2024-G999-001.pdf",
+      "path": "D:\\workSpace\\AI__SPACE\\zzz-00030\\test_hc_run\\intake\\2024-C017-001.pdf",
       "queue_status": "missing"
     },
     "fixable": false,
     "fix_description": "processing_queue无此记录,需人工确认"
-  },
-  {
-    "fingerprint": "1775c8b21de41da4",
-    "category": "error_queue_inconsistency",
-    "severity": "critical",
-    "description": "error_queue 文件在 processing_queue 状态为 done: 2024-B002-001.pdf",
-    "file_path": "D:\\workSpace\\AI__SPACE\\zzz-00030\\test_hc_run\\intake\\2024-B002-001.pdf",
-    "queue_path": null,
-    "batch_id": null,
-    "action_id": null,
-    "detail": {
-      "path": "D:\\workSpace\\AI__SPACE\\zzz-00030\\test_hc_run\\intake\\2024-B002-001.pdf",
-      "queue_status": "done"
-    },
-    "fixable": true,
-    "fix_description": "从error_queue中移除此条目"
   }
 ]

@@ -11,8 +11,12 @@ from scan_sorter.batch_manager import BatchManager
 from scan_sorter.config import load_config, reload_config
 from scan_sorter.healthcheck import (
     HealthChecker,
+    ComparisonResult,
+    compare_findings,
     export_findings_csv,
     export_findings_json,
+    export_comparison_csv,
+    export_comparison_json,
 )
 from scan_sorter.migration import (
     execute_migration,
@@ -234,10 +238,29 @@ def cmd_reload(args: argparse.Namespace) -> None:
     print(json.dumps(new_config.to_dict(), ensure_ascii=False, indent=2))
 
 
+def _print_finding_list(findings: list, label: str, icon: str) -> None:
+    if not findings:
+        return False
+    print(f"\n  {icon} {label} ({len(findings)} 个)")
+    for f in findings:
+        sev = {"critical": "✗", "warning": "⚠", "info": "ℹ"}[f.severity.value]
+        fix_tag = " [可修复]" if f.fixable else ""
+        print(f"    {sev} [{f.category.value}]{fix_tag} {f.description}")
+        if f.file_path:
+            print(f"       文件: {f.file_path}")
+        if f.batch_id:
+            print(f"       批次: {f.batch_id}")
+    return True
+
+
 def cmd_healthcheck(args: argparse.Namespace) -> None:
     config = load_config(args.config)
     checker = HealthChecker(config)
+    prev_findings = checker.state.get_last_findings()
+    prev_check_time = checker.state.get_last_check_time()
     findings = checker.check()
+
+    compare_last = getattr(args, "compare_last", False)
 
     print(f"\n{'='*60}")
     print(f"状态体检结果")
@@ -261,42 +284,69 @@ def cmd_healthcheck(args: argparse.Namespace) -> None:
         if fixable:
             print(f"    可修复: {len(fixable)}")
 
-        print()
-        for f in findings:
-            sev = {"critical": "✗", "warning": "⚠", "info": "ℹ"}[f.severity.value]
-            fix_tag = " [可修复]" if f.fixable else ""
-            print(f"  {sev} [{f.category.value}]{fix_tag} {f.description}")
-            if f.file_path:
-                print(f"     文件: {f.file_path}")
-            if f.batch_id:
-                print(f"     批次: {f.batch_id}")
+        if not compare_last:
+            print()
+            for f in findings:
+                sev = {"critical": "✗", "warning": "⚠", "info": "ℹ"}[f.severity.value]
+                fix_tag = " [可修复]" if f.fixable else ""
+                print(f"  {sev} [{f.category.value}]{fix_tag} {f.description}")
+                if f.file_path:
+                    print(f"     文件: {f.file_path}")
+                if f.batch_id:
+                    print(f"     批次: {f.batch_id}")
 
-    last_check = checker.state.get_last_check_time()
-    if last_check:
-        print(f"\n  上次体检时间: {last_check}")
+    if compare_last:
+        comparison = compare_findings(findings, prev_findings, prev_check_time)
+        print(f"\n{'='*20} 与上次体检对比 {'='*20}")
+        if prev_check_time is None:
+            print("  无可对比的上次体检结果（首次运行）")
+        else:
+            print(f"  上次体检时间: {prev_check_time or '未知'}")
+            print(f"  新增: {len(comparison.new_findings)} 个")
+            print(f"  已解决: {len(comparison.resolved_findings)} 个")
+            print(f"  持续存在: {len(comparison.persistent_findings)} 个")
 
-    known = checker.state.get_known_fingerprints()
-    prev_findings = checker.state.get_last_findings()
-    if prev_findings and len(prev_findings) != len(findings):
-        new_fps = {f.fingerprint for f in findings} - {f.fingerprint for f in prev_findings}
-        resolved_fps = {f.fingerprint for f in prev_findings} - {f.fingerprint for f in findings}
-        if new_fps:
-            print(f"  新增问题: {len(new_fps)} 个")
-        if resolved_fps:
-            print(f"  已解决: {len(resolved_fps)} 个")
+            _print_finding_list(comparison.new_findings, "新增问题", "🆕")
+            _print_finding_list(comparison.resolved_findings, "已解决问题", "✅")
+            _print_finding_list(comparison.persistent_findings, "持续存在问题", "🔁")
+    else:
+        last_check = checker.state.get_last_check_time()
+        if last_check:
+            print(f"\n  上次体检时间: {last_check}")
+
+        prev_findings_simple = checker.state.get_last_findings()
+        if prev_findings_simple and len(prev_findings_simple) != len(findings):
+            new_fps = {f.fingerprint for f in findings} - {f.fingerprint for f in prev_findings_simple}
+            resolved_fps = {f.fingerprint for f in prev_findings_simple} - {f.fingerprint for f in findings}
+            if new_fps:
+                print(f"  新增问题: {len(new_fps)} 个")
+            if resolved_fps:
+                print(f"  已解决: {len(resolved_fps)} 个")
 
     output_path = args.output
     fmt = args.format
     if output_path or fmt:
         fmt = fmt or "json"
         if not output_path:
-            output_path = f"healthcheck_result.{fmt}"
-        if fmt == "json":
-            export_findings_json(findings, output_path)
-            print(f"\n  体检结果已导出 JSON: {output_path}")
-        elif fmt == "csv":
-            export_findings_csv(findings, output_path)
-            print(f"\n  体检结果已导出 CSV: {output_path}")
+            if compare_last:
+                output_path = f"healthcheck_comparison.{fmt}"
+            else:
+                output_path = f"healthcheck_result.{fmt}"
+        if compare_last:
+            comparison = compare_findings(findings, prev_findings, prev_check_time)
+            if fmt == "json":
+                export_comparison_json(comparison, output_path)
+                print(f"\n  对比结果已导出 JSON: {output_path}")
+            elif fmt == "csv":
+                export_comparison_csv(comparison, output_path)
+                print(f"\n  对比结果已导出 CSV: {output_path}")
+        else:
+            if fmt == "json":
+                export_findings_json(findings, output_path)
+                print(f"\n  体检结果已导出 JSON: {output_path}")
+            elif fmt == "csv":
+                export_findings_csv(findings, output_path)
+                print(f"\n  体检结果已导出 CSV: {output_path}")
 
 
 def cmd_heal(args: argparse.Namespace) -> None:
@@ -705,6 +755,12 @@ def build_parser() -> argparse.ArgumentParser:
         help="导出格式 (不指定则不导出文件)",
     )
     p_healthcheck.add_argument("--output", help="体检结果导出路径")
+    p_healthcheck.add_argument(
+        "--compare-last",
+        action="store_true",
+        default=False,
+        help="与上次体检结果对比，输出新增、已解决、持续存在三组结果",
+    )
 
     p_heal = sub.add_parser("heal", help="恢复:修复体检发现的一致性问题")
     p_heal.add_argument(

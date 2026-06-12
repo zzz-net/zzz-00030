@@ -1,0 +1,58 @@
+{
+  "last_check_time": "2026-06-12T13:51:16.162259",
+  "last_findings": [
+    {
+      "fingerprint": "332ba0f0500b8ede",
+      "category": "queue_file_mismatch",
+      "severity": "critical",
+      "description": "队列标记done但文件仍在intake: 2024-Z999-001.pdf",
+      "file_path": "D:\\workSpace\\AI__SPACE\\zzz-00030\\review_verify_p06a01\\shared_intake\\2024-Z999-001.pdf",
+      "queue_path": "D:\\workSpace\\AI__SPACE\\zzz-00030\\review_verify_p06a01\\state_a\\queue.json",
+      "batch_id": null,
+      "action_id": null,
+      "detail": {
+        "queue_status": "done",
+        "actual_location": "intake"
+      },
+      "fixable": true,
+      "fix_description": "将队列状态修正为failed"
+    },
+    {
+      "fingerprint": "7da9848b7b173093",
+      "category": "target_occupied",
+      "severity": "warning",
+      "description": "目标路径被非本工具占用的文件阻挡: D:\\workSpace\\AI__SPACE\\zzz-00030\\review_verify_p06a01\\shared_target\\2024-Z999\\2024-Z999-001.pdf",
+      "file_path": "D:\\workSpace\\AI__SPACE\\zzz-00030\\review_verify_p06a01\\shared_target\\2024-Z999\\2024-Z999-001.pdf",
+      "queue_path": null,
+      "batch_id": null,
+      "action_id": null,
+      "detail": {
+        "error_item_path": "D:\\workSpace\\AI__SPACE\\zzz-00030\\review_verify_p06a01\\shared_intake\\2024-Z999-001.pdf",
+        "target_path": "D:\\workSpace\\AI__SPACE\\zzz-00030\\review_verify_p06a01\\shared_target\\2024-Z999\\2024-Z999-001.pdf"
+      },
+      "fixable": false,
+      "fix_description": "需人工移除或确认占用文件"
+    },
+    {
+      "fingerprint": "fa62e1a90caf177c",
+      "category": "error_queue_inconsistency",
+      "severity": "critical",
+      "description": "error_queue 文件在 processing_queue 状态为 done: 2024-Z999-001.pdf",
+      "file_path": "D:\\workSpace\\AI__SPACE\\zzz-00030\\review_verify_p06a01\\shared_intake\\2024-Z999-001.pdf",
+      "queue_path": null,
+      "batch_id": null,
+      "action_id": null,
+      "detail": {
+        "path": "D:\\workSpace\\AI__SPACE\\zzz-00030\\review_verify_p06a01\\shared_intake\\2024-Z999-001.pdf",
+        "queue_status": "done"
+      },
+      "fixable": true,
+      "fix_description": "从error_queue中移除此条目"
+    }
+  ],
+  "finding_fingerprints": [
+    "332ba0f0500b8ede",
+    "7da9848b7b173093",
+    "fa62e1a90caf177c"
+  ]
+}

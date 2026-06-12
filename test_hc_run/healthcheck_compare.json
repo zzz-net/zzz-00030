@@ -1,0 +1,110 @@
+{
+  "new_findings": [
+    {
+      "fingerprint": "e3826957c0cf8334",
+      "category": "error_queue_stale",
+      "severity": "warning",
+      "description": "error_queue 中文件已不存在: 2024-A016-001.pdf",
+      "file_path": "D:\\workSpace\\AI__SPACE\\zzz-00030\\test_hc_run\\intake\\2024-A016-001.pdf",
+      "queue_path": null,
+      "batch_id": null,
+      "action_id": null,
+      "detail": {
+        "path": "D:\\workSpace\\AI__SPACE\\zzz-00030\\test_hc_run\\intake\\2024-A016-001.pdf",
+        "error": "Phase13 JSON导出测试幽灵"
+      },
+      "fixable": true,
+      "fix_description": "从error_queue中移除此条目"
+    },
+    {
+      "fingerprint": "296cbaa642e584fb",
+      "category": "error_queue_inconsistency",
+      "severity": "warning",
+      "description": "error_queue 文件不在 processing_queue 中: 2024-A016-001.pdf",
+      "file_path": "D:\\workSpace\\AI__SPACE\\zzz-00030\\test_hc_run\\intake\\2024-A016-001.pdf",
+      "queue_path": null,
+      "batch_id": null,
+      "action_id": null,
+      "detail": {
+        "path": "D:\\workSpace\\AI__SPACE\\zzz-00030\\test_hc_run\\intake\\2024-A016-001.pdf",
+        "queue_status": "missing"
+      },
+      "fixable": false,
+      "fix_description": "processing_queue无此记录,需人工确认"
+    }
+  ],
+  "resolved_findings": [
+    {
+      "fingerprint": "a09f3b3a707340b0",
+      "category": "error_queue_stale",
+      "severity": "warning",
+      "description": "error_queue 中文件已不存在: 2024-N015-001.pdf",
+      "file_path": "D:\\workSpace\\AI__SPACE\\zzz-00030\\test_hc_run\\intake\\2024-N015-001.pdf",
+      "queue_path": null,
+      "batch_id": null,
+      "action_id": null,
+      "detail": {
+        "path": "D:\\workSpace\\AI__SPACE\\zzz-00030\\test_hc_run\\intake\\2024-N015-001.pdf",
+        "error": "Phase13 新增幽灵条目"
+      },
+      "fixable": true,
+      "fix_description": "从error_queue中移除此条目"
+    },
+    {
+      "fingerprint": "688f3a33d784d6b0",
+      "category": "error_queue_inconsistency",
+      "severity": "warning",
+      "description": "error_queue 文件不在 processing_queue 中: 2024-N015-001.pdf",
+      "file_path": "D:\\workSpace\\AI__SPACE\\zzz-00030\\test_hc_run\\intake\\2024-N015-001.pdf",
+      "queue_path": null,
+      "batch_id": null,
+      "action_id": null,
+      "detail": {
+        "path": "D:\\workSpace\\AI__SPACE\\zzz-00030\\test_hc_run\\intake\\2024-N015-001.pdf",
+        "queue_status": "missing"
+      },
+      "fixable": false,
+      "fix_description": "processing_queue无此记录,需人工确认"
+    }
+  ],
+  "persistent_findings": [
+    {
+      "fingerprint": "77b9ce17300c24ef",
+      "category": "queue_file_mismatch",
+      "severity": "critical",
+      "description": "队列标记done但源文件和目标文件都不存在: 2024-S013-001.pdf",
+      "file_path": "D:\\workSpace\\AI__SPACE\\zzz-00030\\test_hc_run\\intake\\2024-S013-001.pdf",
+      "queue_path": "D:\\workSpace\\AI__SPACE\\zzz-00030\\test_hc_run\\data\\queue.json",
+      "batch_id": null,
+      "action_id": null,
+      "detail": {
+        "queue_status": "done",
+        "actual_location": "nowhere",
+        "target_path": "D:\\workSpace\\AI__SPACE\\zzz-00030\\test_hc_run\\target\\2024-S013\\2024-S013-001.pdf"
+      },
+      "fixable": true,
+      "fix_description": "将队列状态修正为failed"
+    },
+    {
+      "fingerprint": "0f22d42721caedb6",
+      "category": "queue_stale_done",
+      "severity": "critical",
+      "description": "队列标记done但目标文件已被外部删除: 2024-S013-001.pdf",
+      "file_path": "D:\\workSpace\\AI__SPACE\\zzz-00030\\test_hc_run\\intake\\2024-S013-001.pdf",
+      "queue_path": null,
+      "batch_id": null,
+      "action_id": null,
+      "detail": {
+        "target_path": "D:\\workSpace\\AI__SPACE\\zzz-00030\\test_hc_run\\target\\2024-S013\\2024-S013-001.pdf"
+      },
+      "fixable": true,
+      "fix_description": "将队列状态修正为failed"
+    }
+  ],
+  "last_check_time": "2026-06-12T13:49:05.756237",
+  "summary": {
+    "new_count": 2,
+    "resolved_count": 2,
+    "persistent_count": 2
+  }
+}
